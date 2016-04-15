@@ -1,9 +1,9 @@
-ChallengerAntiBaseUltVersion     = "0.01"
+ChallengerAntiBaseUltVersion     = "0.02"
 
 function ChallengerAntiBaseUltUpdaterino(data)
   if tonumber(data) > tonumber(ChallengerAntiBaseUltVersion) then
-    PrintChat("<font color='#EE2EC'>Challenger AntiBaseUlt - </font> New version found! " ..tonumber(data).." Downloading update, please wait...")
-    DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerAntiBaseUlt.lua", SCRIPT_PATH .. "ChallengerAntiBaseUlt.lua", function() PrintChat("<font color='#EE2EC'>Challenger AntiBaseUlt - </font> Updated from v"..tonumber(ChallengerAntiBaseUltVersion).." to v"..tonumber(data)..". Please press F6 twice to reload.") return end)
+    PrintChat("<b><font color='#EE2EC'>Challenger AntiBaseUlt - </font></b> New version found! " ..tonumber(data).." Downloading update, please wait...")
+    DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerAntiBaseUlt.lua", SCRIPT_PATH .. "ChallengerAntiBaseUlt.lua", function() PrintChat("<b><font color='#EE2EC'>Challenger AntiBaseUlt - </font></b> Updated from v"..tonumber(ChallengerAntiBaseUltVersion).." to v"..tonumber(data)..". Please press F6 twice to reload.") return end)
   end
 end
 
@@ -12,7 +12,6 @@ class "ChallengerAntiBaseUlt"
 function ChallengerAntiBaseUlt:__init()
   self.cfg = MenuConfig("AntiBaseUlt", "Anti-BaseUlt")
   self.cfg:Boolean("Enabled", "Enabled", true)
-  self.cfg:Boolean("Debug", "Debug", true)
   self.SpellData = {
     ["Ashe"] = {
       MissileName = "EnchantedCrystalArrow",
@@ -74,25 +73,13 @@ end
 function ChallengerAntiBaseUlt:Tick()
   if not IsRecalling(myHero) or IsDead(myHero) then return end
   for i, missile in pairs(self.missiles) do
-  	self:Debug("<font color='#EE2EC'>Challenger Anti-BaseUlt - </font> Baseult Missile Detected")
-    if getdmg("R", GetObjectSpellOwner(missile), myHero, 3) < GetCurrentHP(myHero) then
-      self:Debug("<font color='#EE2EC'>Challenger Anti-BaseUlt - </font> Not Enough Damage From "..GetObjectName(GetObjectSpellOwner(missile))"'s' Baseult")
-      return
-    end
-    if not self:InFountain(GetObjectSpellEndPos(missile)) then
-      self:Debug("<font color='#EE2EC'>Challenger Anti-BaseUlt - </font> Missile Detected Is Not A Baseult")
-      return
-    end
-    local TimeToHit = GetDistance(missile, self.fountain) / self.SpellData[GetObjectSpellOwner(missile)].MissileSpeed * 1000
-    if self.RecallingTime < TimeToHit then
-      self:Debug("<font color='#EE2EC'>Challenger Anti-BaseUlt - </font> Baseult Not Correctly Timed")
-      return
-    end
-    MoveToXYZ(myHero.x+1,myHero.y, myHero.z+1)
-    if GetTickCount()-self.LastPrint > 1000 then
-      PrintChat("<font color='#EE2EC'>Challenger Anti-BaseUlt - </font> Prevented A Baseult From "..GetObjectName(GetObjectSpellOwner(missile))" ")
-      self.LastPrint = GetTickCount()
-    end
+    if getdmg("R", GetObjectSpellOwner(missile), myHero, 3) > GetCurrentHP(myHero) and self:InFountain(GetObjectSpellEndPos(missile)) and self.RecallingTime > (GetDistance(missile, self.fountain) / self.SpellData[GetObjectSpellOwner(missile)].MissileSpeed * 1000) then
+      MoveToXYZ(myHero.x+1,myHero.y, myHero.z+1)
+      if GetTickCount()-self.LastPrint > 1000 then
+        PrintChat("<b><font color='#EE2EC'>Challenger Anti-BaseUlt - </font></b> Prevented A Baseult From "..GetObjectName(GetObjectSpellOwner(missile))" ")
+        self.LastPrint = GetTickCount()
+      end
+    end 
   end
 end
 
@@ -100,10 +87,6 @@ function ChallengerAntiBaseUlt:InFountain(pos)
   return GetDistance(self.fountain, pos) < self.fountainRange
 end
 
-function ChallengerAntiBaseUlt:Debug(string)
-  return self.cfg.Debug:Value() and print(string) or nil
-end
-
 GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerAntiBaseUlt.version", ChallengerAntiBaseUltUpdaterino)
-PrintChat("<font color='#EE2EC'>Challenger Anti-BaseUlt - </font> Loaded v" ..ChallengerAntiBaseUltVersion)
+PrintChat("<b><font color='#EE2EC'>Challenger Anti-BaseUlt - </font></b> Loaded v" ..ChallengerAntiBaseUltVersion)
 ChallengerAntiBaseUlt()
