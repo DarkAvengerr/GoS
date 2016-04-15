@@ -46,27 +46,27 @@ end
 
 function ChallengerAntiBaseUlt:ObjectLoad(Object)
   if GetObjectType(Object) == Obj_AI_SpawnPoint and GetTeam(Object) == GetTeam(myHero) then
-  	self.fountain = Object
+    self.fountain = Object
   end
   if self.SpellData[GetObjectSpellOwner(Object)] and self.SpellData[GetObjectSpellOwner(Object)].MissileName == GetObjectSpellName(Object) and GetTeam(GetObjectSpellOwner(Object)) == MINION_ENEMY then
-  	table.insert(self.missiles, Object)
+    table.insert(self.missiles, Object)
   end
 end
 
 function ChallengerAntiBaseUlt:CreateObj(Object)
   DelayAction(function()
   if GetObjectType(Object) == Obj_AI_SpawnPoint and GetTeam(Object) == GetTeam(myHero) then
-  	self.fountain = Object
+    self.fountain = Object
   end
   if self.SpellData[GetObjectSpellOwner(Object)] and self.SpellData[GetObjectSpellOwner(Object)].MissileName == GetObjectSpellName(Object) and GetTeam(GetObjectSpellOwner(Object)) == MINION_ENEMY then
-  	table.insert(self.missiles, Object)
+    table.insert(self.missiles, Object)
   end
   end, 0)
 end
 
 function ChallengerAntiBaseUlt:ProcessRecall(unit, recall)
   if unit == myHero and recall.isStart then
-  	self.RecallingTime = GetTickCount() + recall.totalTime
+    self.RecallingTime = GetTickCount() + recall.totalTime
   end
 end
 
@@ -79,7 +79,7 @@ function ChallengerAntiBaseUlt:Tick()
         PrintChat("<b><font color='#EE2EC'>Challenger Anti-BaseUlt - </font></b> Prevented A Baseult From "..GetObjectName(GetObjectSpellOwner(missile))" ")
         self.LastPrint = GetTickCount()
       end
-    end 
+    end
   end
 end
 
