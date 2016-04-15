@@ -1,39 +1,16 @@
-ChallengerBaseultVersion     = "0.06"
-
-Callback.Add("Load", function()
-  GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerBaseult.version", ChallengerBaseultUpdaterino)
-  ChallengerBaseult()
-end)
+ChallengerBaseultVersion     = "0.07"
 
 function ChallengerBaseultUpdaterino(data)
   if tonumber(data) > tonumber(ChallengerBaseultVersion) then
-    PrintChat("<font color='#FFFF00'>Challenger Baseult - </font> New version found! " ..tonumber(data).." Downloading update, please wait...")
-    DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerBaseult.lua", SCRIPT_PATH .. "ChallengerBaseult.lua", function() PrintChat("<font color='#FFFF00'>Challenger Baseult - </font> Updated from v"..tonumber(ChallengerBaseultVersion).." to v"..tonumber(data)..". Please press F6 twice to reload.") return end)
+    PrintChat("<b><font color='#EE2EC'>Challenger Baseult - </font></b> New version found! " ..tonumber(data).." Downloading update, please wait...")
+    DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerBaseult.lua", SCRIPT_PATH .. "ChallengerBaseult.lua", function() PrintChat("<b><font color='#EE2EC'>Challenger Baseult - </font></b> Updated from v"..tonumber(ChallengerBaseultVersion).." to v"..tonumber(data)..". Please press F6 twice to reload.") return end)
   end
 end
 
 class "ChallengerBaseult"
 
 function ChallengerBaseult:__init()
-  self.BasePositions = {
-    [SUMMONERS_RIFT] = {
-      [100] = Vector(14340, 171, 14390),
-      [200] = Vector(400, 200, 400)
-    },
-
-    [CRYSTAL_SCAR] = {
-      [100] = Vector(13321, -37, 4163),
-      [200] = Vector(527, -35, 4163)
-    },
-
-    [TWISTED_TREELINE] = {
-      [100] = Vector(14320, 151, 7235),
-      [200] = Vector(1060, 150, 7297)
-    }
-  }
-
-  self.enemySpawnPos = self.BasePositions[GetMapID()][GetTeam(myHero)]
-
+  self.enemySpawnPos = nil
   self.SpellData = {
     ["Ashe"] = {
       Delay = 0.25,
@@ -60,8 +37,8 @@ function ChallengerBaseult:__init()
     }
   }
 
-  if not self.SpellData[GetObjectName(myHero)] then return end
-  PrintChat(string.format("<font color='#AAAAAA'>Challenger Baseult</font> <font color='#77FF77'> For "..GetObjectName(myHero).." Loaded, Have Fun ! </font>"))
+  if not self.SpellData[GetObjectName(myHero)] then PrintChat(string.format("<b><font color='#EE2EC'>Challenger Baseult -</font></b><b><font color='#ff0000'> "..GetObjectName(myHero).." Is Not Supported! </font></b>")) return end
+  PrintChat(string.format("<b><font color='#EE2EC'>Challenger Baseult</font></b> For "..GetObjectName(myHero).." Loaded, Have Fun ! "))
   self.Recalling = {}
   self.BaseultMenu = MenuConfig("ChallengerBaseult", "Challenger Baseult")
   self.BaseultMenu:KeyBinding("Baseult", "Baseult", string.byte("H"), true, function() end, true)
@@ -75,8 +52,24 @@ function ChallengerBaseult:__init()
   self.Delay = self.SpellData[GetObjectName(myHero)].Delay
   self.MissileSpeed = self.SpellData[GetObjectName(myHero)].MissileSpeed
   self.Damage = self.SpellData[GetObjectName(myHero)].Damage
+  Callback.Add("ObjectLoad", function(Object) self:ObjectLoad(Object) end)
+  Callback.Add("CreateObj", function(Object) self:CreateObj(Object) end)
   Callback.Add("Tick", function() self:Tick() end)
   Callback.Add("ProcessRecall", function(unit,recall) self:ProcessRecall(unit,recall) end)
+end
+
+function ChallengerBaseult:ObjectLoad(Object)
+  if GetObjectType(Object) == Obj_AI_SpawnPoint and GetTeam(Object) ~= GetTeam(myHero) then
+    self.enemySpawnPos = Object
+  end
+end
+
+function ChallengerBaseult:CreateObj(Object)
+  DelayAction(function()
+  if GetObjectType(Object) == Obj_AI_SpawnPoint and GetTeam(Object) ~= GetTeam(myHero) then
+    self.enemySpawnPos = Object
+  end
+  end, 0)
 end
 
 function ChallengerBaseult:Tick()
@@ -86,22 +79,22 @@ function ChallengerBaseult:Tick()
     SpellReady = CanUseSpell(myHero, _R) == READY
   end
   if SpellReady then
-    for i = 1, #self.Recalling do
-      local dmg = self.Damage(self.Recalling[i].champ)
-      if dmg >= GetCurrentHP(self.Recalling[i].champ) then
-        local RemainingTime = self.Recalling[i].duration - (GetGameTimer() - self.Recalling[i].start) + GetLatency() / 2000
+    for i, recall in pairs(self.Recalling) do
+      local dmg = self.Damage(recall.champ)
+      if dmg >= GetCurrentHP(recall.champ) and self.enemySpawnPos ~= nil then
+        local RemainingTime = recall.duration - (GetGameTimer() - recall.start) + GetLatency() / 2000
         local BaseDistance = GetDistance(self.enemySpawnPos)
         if GetObjectName(myHero) == "Jinx" then
           self.MissileSpeed = BaseDistance > 1350 and (2295000 + (BaseDistance - 1350) * 2200) / BaseDistance or 1700
         end
         local TimeToHit = self.Delay + BaseDistance / self.MissileSpeed + GetLatency() / 2000
-        if RemainingTime < TimeToHit and TimeToHit < 7.8 and TimeToHit - RemainingTime < 1.5 and dmg >= GetCurrentHP(self.Recalling[i].champ) and self.BaseultMenu.Baseult:Value() and not self.BaseultMenu.PanicKey:Value() then
+        if RemainingTime < TimeToHit and TimeToHit < 7.8 and TimeToHit - RemainingTime < 1.5 and dmg >= GetCurrentHP(recall.champ) and self.BaseultMenu.Baseult:Value() and not self.BaseultMenu.PanicKey:Value() then
           if self.BaseultMenu.Collision:Value() then
-            if self:Collision(self.Recalling[i].champ) == 0 then
-              CastSkillShot(_R, self.enemySpawnPos)
+            if self:Collision(recall.champ) == 0 then
+              CastSkillShot(_R, GetOrigin(self.enemySpawnPos))
             end
           else
-            CastSkillShot(_R, self.enemySpawnPos)
+            CastSkillShot(_R, GetOrigin(self.enemySpawnPos))
           end
         end
       end
@@ -114,8 +107,8 @@ function ChallengerBaseult:ProcessRecall(unit,recall)
     if recall.isStart == true then
       table.insert(self.Recalling, {champ = unit, start = GetGameTimer(), duration = (recall.totalTime/1000)})
     else
-      for i = 1, #self.Recalling do
-        if self.Recalling[i].champ == unit then
+      for i, recall in pairs(self.Recalling) do
+        if recall.champ == unit then
           table.remove(self.Recalling, i)
           return
         end
@@ -127,12 +120,15 @@ end
 function ChallengerBaseult:Collision(unit)
   local count = 0
   for i, enemy in pairs(GetEnemyHeroes()) do
-    if enemy ~= nil and IsObjectAlive(enemy) and GetNetworkID(unit) ~= GetNetworkID(enemy) then
-      local pointSegment, pointLine, isOnSegment = VectorPointProjectionOnLineSegment(GetOrigin(myHero), self.enemySpawnPos, GetOrigin(enemy))
-      if isOnSegment and GetDistanceSqr(pointSegment, GetOrigin(enemy)) < (60+enemy.boundingRadius)^2 and GetDistanceSqr(GetOrigin(myHero), self.enemySpawnPos) > GetDistanceSqr(GetOrigin(myHero), GetOrigin(enemy)) then
+    if enemy ~= nil and IsObjectAlive(enemy) and GetNetworkID(unit) ~= GetNetworkID(enemy) and self.enemySpawnPos ~= nil then
+      local pointSegment, pointLine, isOnSegment = VectorPointProjectionOnLineSegment(GetOrigin(myHero), GetOrigin(self.enemySpawnPos), GetOrigin(enemy))
+      if isOnSegment and GetDistanceSqr(pointSegment, GetOrigin(enemy)) < (60+enemy.boundingRadius)^2 and GetDistanceSqr(GetOrigin(myHero), GetOrigin(self.enemySpawnPos)) > GetDistanceSqr(GetOrigin(myHero), GetOrigin(enemy)) then
         count = count + 1
       end
     end
   end
   return count
 end
+
+GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerBaseult.version", ChallengerBaseultUpdaterino)
+ChallengerBaseult()
