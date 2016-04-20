@@ -1,6 +1,6 @@
 require('OpenPredict')
 
-ChallengerAntiJumpVersion     = "0.01"
+ChallengerAntiJumpVersion     = "0.02"
 
 function ChallengerAntiJumpUpdaterino(data)
   if tonumber(data) > tonumber(ChallengerAntiJumpVersion) then
@@ -46,7 +46,7 @@ function ChallengerAntiJump:__init()
   ["Zac"] = {250, _R, false)
   ["Zyra"] = {1050, _E, true, 1400, 0.5, 70)
   }
-  if not self.Supported[GetObjectName(myHero)] then PrintChat(string.format("<b><font color='#EE2EC'>Challenger AntiJump -</font></b><b><font color='#ff0000'> "..GetObjectName(myHero).." Is Not Supported! </font></b>")) return end
+  if not self.Supported[GetObjectName(myHero)] then PrintChat("<b><font color='#EE2EC'>Challenger AntiJump -</font></b><b><font color='#ff0000'> "..GetObjectName(myHero).." Is Not Supported! </font></b>") return end
   PrintChat("<b><font color='#EE2EC'>Challenger AntiJump - </font></b> Loaded v" ..ChallengerAntiJumpVersion)
   self:Load()
   Callback.Add("Animation",function(unit,ani) self:Animation(unit,ani) end)
