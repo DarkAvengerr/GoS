@@ -1,4 +1,4 @@
-ChallengerBaseultVersion     = "0.07"
+ChallengerBaseultVersion     = "0.08"
 
 function ChallengerBaseultUpdaterino(data)
   if tonumber(data) > tonumber(ChallengerBaseultVersion) then
@@ -37,7 +37,7 @@ function ChallengerBaseult:__init()
     }
   }
 
-  if not self.SpellData[GetObjectName(myHero)] then PrintChat(string.format("<b><font color='#EE2EC'>Challenger Baseult -</font></b><b><font color='#ff0000'> "..GetObjectName(myHero).." Is Not Supported! </font></b>")) return end
+  if not self.SpellData[GetObjectName(myHero)] then PrintChat("<b><font color='#EE2EC'>Challenger Baseult -</font></b><b><font color='#ff0000'> "..GetObjectName(myHero).." Is Not Supported! </font></b>") return end
   PrintChat(string.format("<b><font color='#EE2EC'>Challenger Baseult</font></b> For "..GetObjectName(myHero).." Loaded, Have Fun ! "))
   self.Recalling = {}
   self.BaseultMenu = MenuConfig("ChallengerBaseult", "Challenger Baseult")
