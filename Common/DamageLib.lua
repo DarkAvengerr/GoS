@@ -1,842 +1,1091 @@
 --[[
-	Spell Damage Library
-	by eXtragoZ Ported And Updated by Deftsu
-	
-Version = 1.0.0.3
---1.0.0.1: fixed katarina W, aded Ludens, Hextech and Bilgewater
---1.0.0.2: fixed Damage Calc for AD and Items
---1.0.0.3: fixed Bard QLevel
-		
-		Is designed to calculate the damage of the skills to champions, although most of the calculations
-		work for creeps
-			
--------------------------------------------------------	
-	Usage:
-
-		local target = GetCurrentTarget()
-		local damage = getdmg("R",target,Source,3)	
+It's designed to calculate the damage of the skills to champions, although most of the calculations work for creeps.
 -------------------------------------------------------
-	Full function:
-		getdmg("SKILL",target,myHero,stagedmg,spelllvl)
-		
-	Returns:
-		damage
+Usage:
+local target = GetCurrentTarget()
+local damage = getdmg("R",target,source,3)
+-------------------------------------------------------
+Full function:
+getdmg("SKILL",target,myHero,stagedmg,spelllvl)
+]]
 
-		Skill:			(in capitals!)
-			"P"				-Passive
-			"Q"
-			"W"
-			"E"
-			"R"
-			"QM"			-Q in melee form (Jayce, Nidalee and Elise only)
-			"WM"			-W in melee form (Jayce, Nidalee and Elise only)
-			"EM"			-E in melee form (Jayce, Nidalee and Elise only)
-			
-		Stagedmg:
-			nil	Active or first instance of dmg
-			1	Active or first instance of dmg
-			2	Passive or second instance of dmg
-			3	Max damage or third instance of dmg
-			
-		-Returns the damage they will do "Source" to "target" with the "skill"
-		-With some skills returns a percentage of increased damage
-		-Use spelllvl only if you want to specify the level of skill
-		
-]]--
+_G.Ignite = (GetCastName(myHero, SUMMONER_1):lower():find("summonerdot") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("summonerdot") and SUMMONER_2 or nil))
+_G.Smite = (GetCastName(myHero, SUMMONER_1):lower():find("smite") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("smite") and SUMMONER_2 or nil))
 
-local LudensStacks = 0
+local DamageLibTable = {
+  ["Aatrox"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.6 * source.totalDamage end},
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return ({60, 95, 130, 165, 200})[level] + source.totalDamage end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({75, 110, 145, 180, 215})[level] + 0.6 * GetBonusAP(source) + 0.6 * source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({200, 300, 400})[level] + GetBonusAP(source) end},
+  },
 
-function getdmg(spellname,target,Source,stagedmg,spelllvl)
-    local Source = Source or GetMyHero()
-	local Qlvl = spelllvl and spelllvl or GetCastLevel(Source,_Q)
-	local Wlvl = spelllvl and spelllvl or GetCastLevel(Source,_W)
-	local Elvl = spelllvl and spelllvl or GetCastLevel(Source,_E)
-	local Rlvl = spelllvl and spelllvl or GetCastLevel(Source,_R)
-	local stagedmg1,stagedmg2,stagedmg3 = 1,0,0
-	if stagedmg == 2 then stagedmg1,stagedmg2,stagedmg3 = 0,1,0
-	elseif stagedmg == 3 then stagedmg1,stagedmg2,stagedmg3 = 0,0,1 end
-	local TrueDmg = 0
-	local apdmg = 0
-	local addmg = 0
-	local dmg = 0
-	if ((spellname == "Q" or spellname == "QM") and Qlvl == 0) or ((spellname == "W" or spellname == "WM") and Wlvl == 0) or ((spellname == "E" or spellname == "EM") and Elvl == 0) or (spellname == "R" and Rlvl == 0) then
-		TrueDmg = 0
-	elseif spellname == "Q" or spellname == "W" or spellname == "E" or spellname == "R" or spellname == "P" or spellname == "QM" or spellname == "WM" or spellname == "EM" then
-		if GetObjectName(Source) == "Aatrox" then
-			if spellname == "Q" then addmg = 45*Qlvl+25+.6*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "W" then addmg = (35*Wlvl+25+(GetBonusDmg(Source)+GetBaseDamage(Source)))*(stagedmg1+stagedmg3) 
-			elseif spellname == "E" then apdmg = 35*Elvl+40+.6*GetBonusAP(Source)+.6*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "R" then apdmg = 100*Rlvl+100+GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Ahri" then
-			if spellname == "Q" then apdmg = (25*Qlvl+15+.35*GetBonusAP(Source))*(stagedmg1+stagedmg3) dmg = (25*Qlvl+15+.35*GetBonusAP(Source))*(stagedmg2+stagedmg3) -- stage1:Initial. stage2:way back. stage3:total.
-			elseif spellname == "W" then apdmg = math.max(25*Wlvl+15+.4*GetBonusAP(Source),(25*Wlvl+15+.4*GetBonusAP(Source))*1.6*stagedmg3) -- xfox-fires ,  30% damage from each additional fox-fire beyond the first. stage3: Max damage
-			elseif spellname == "E" then apdmg = 35*Elvl+25+.5*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 40*Rlvl+30+.3*GetBonusAP(Source) -- per dash
-			end
-		elseif GetObjectName(Source) == "Akali" then
-			if spellname == "P" then apdmg = (6+GetBonusAP(Source)/6)*(GetBonusDmg(Source)+GetBaseDamage(Source))/100
-			elseif spellname == "Q" then apdmg = math.max((20*Qlvl+15+.4*GetBonusAP(Source))*stagedmg1,(25*Qlvl+20+.5*GetBonusAP(Source))*stagedmg2,(45*Qlvl+35+.9*GetBonusAP(Source))*stagedmg3) --stage1:Initial. stage2:Detonation. stage3:Max damage
-			elseif spellname == "E" then addmg = 25*Elvl+5+.4*GetBonusAP(Source)+.6*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "R" then apdmg = 75*Rlvl+25+.5*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Alistar" then
-			if spellname == "P" then apdmg = math.max(6+GetLevel(Source)+.1*GetBonusAP(Source),(6+GetLevel(Source)+.1*GetBonusAP(Source))*3*stagedmg3)
-			elseif spellname == "Q" then apdmg = 45*Qlvl+15+.5*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 55*Wlvl+.7*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Amumu" then
-			if spellname == "Q" then apdmg = 50*Qlvl+30+.7*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = ((.5*Wlvl+.5+.01*GetBonusAP(Source))*GetMaxHP(target)/100)+4*Wlvl+4 --xsec
-			elseif spellname == "E" then apdmg = 25*Elvl+50+.5*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 100*Rlvl+50+.8*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Anivia" then
-			if spellname == "Q" then apdmg = math.max(30*Qlvl+30+.5*GetBonusAP(Source),(30*Qlvl+30+.5*GetBonusAP(Source))*2*stagedmg3) -- x2 if it detonates. stage3: Max damage
-			elseif spellname == "E" then apdmg = math.max(30*Elvl+25+.5*GetBonusAP(Source),(30*Elvl+25+.5*GetBonusAP(Source))*2*stagedmg3) -- x2  If the target has been chilled. stage3: Max damage
-			elseif spellname == "R" then apdmg = 40*Rlvl+40+.25*GetBonusAP(Source) --xsec
-			end
-		elseif GetObjectName(Source) == "Annie" then
-			if spellname == "Q" then apdmg = 35*Qlvl+45+.8*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 45*Wlvl+25+.85*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 10*Elvl+10+.2*GetBonusAP(Source) --x each attack suffered
-			elseif spellname == "R" then apdmg = math.max((125*Rlvl+50+.8*GetBonusAP(Source))*stagedmg1,(10*Rlvl+10+.2*GetBonusAP(Source))*stagedmg2,(125*Rlvl+50+.8*GetBonusAP(Source))*stagedmg3) addmg = (25*Rlvl+55)*stagedmg2 --stage1:Summon Tibbers . stage2:Aura AoE xsec + 1 Tibbers Attack. stage3:Summon Tibbers
-			end
-		elseif GetObjectName(Source) == "Ashe" then  -- script doesn't calculate autos and therefore doesn't take Ashe's crit mechanic on slowed targets into effect
-			if spellname == "Q" then addmg = (.05*Qlvl+.1)*(GetBonusDmg(Source)+GetBaseDamage(Source))  --xhit (bonus)
-			elseif spellname == "W" then addmg = 15*Wlvl+5+(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "R" then apdmg = 175*Rlvl+75+GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Azir" then
-			if spellname == "Q" then apdmg = 20*Qlvl+45+.5*GetBonusAP(Source) --beyond the first will deal only 25% damage
-			elseif spellname == "W" then apdmg = math.max(5*GetLevel(Source)+45,10*GetLevel(Source)-10)+.6*GetBonusAP(Source)--after the first deals 25% damage
-			elseif spellname == "E" then apdmg = 30*Qlvl+30+.4*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 75*Rlvl+75+.6*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Bard" then
-			if spellname == "P" then apdmg = 30+.3*GetBonusAP(Source)  --I don't know how to check Meep count to calculate damage
-			elseif spellname == "Q" then apdmg = 45*Qlvl+35+.65*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Blitzcrank" then
-			if spellname == "Q" then apdmg = 55*Qlvl+25+GetBonusAP(Source)
-			elseif spellname == "E" then addmg = (GetBonusDmg(Source)+GetBaseDamage(Source)) 
-			elseif spellname == "R" then apdmg = math.max((125*Rlvl+125+GetBonusAP(Source))*stagedmg1,(100*Rlvl+.2*GetBonusAP(Source))*stagedmg2,(125*Rlvl+125+GetBonusAP(Source))*stagedmg3) --stage1:the active. stage2:the passive. stage3:the active
-			end
-		elseif GetObjectName(Source) == "Brand" then
-			if spellname == "P" then apdmg = math.max(2*GetMaxHP(target)/100,(2*GetMaxHP(target)/100)*4*stagedmg3) --xsec (4sec). stage3: Max damage
-			elseif spellname == "Q" then apdmg = 40*Qlvl+40+.65*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = math.max(45*Wlvl+30+.6*GetBonusAP(Source),(45*Wlvl+30+.6*GetBonusAP(Source))*1.25*stagedmg3) --125% for units that are ablaze. stage3: Max damage
-			elseif spellname == "E" then apdmg = 35*Elvl+35+.55*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = math.max(100*Rlvl+50+.5*GetBonusAP(Source),(100*Rlvl+50+.5*GetBonusAP(Source))*3*stagedmg3) --xbounce (can hit the same enemy up to three times). stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Braum" then
-			if spellname == "P" then apdmg = math.max((8*GetLevel(Source)+32)*(stagedmg1+stagedmg3),(2*GetLevel(Source)+12)*stagedmg2) --stage1-stage3:Stun. stage2:bonus damage.
-			elseif spellname == "Q" then apdmg = 45*Qlvl+25+.025*GetMaxHP(Source)
-			elseif spellname == "R" then apdmg = 100*Rlvl+50+.6*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Caitlyn" then
-			if spellname == "P" then addmg = .5*(GetBonusDmg(Source)+GetBaseDamage(Source))*1.5  --xheadshot (bonus)
-			elseif spellname == "Q" then addmg = 40*Qlvl-20+1.3*(GetBonusDmg(Source)+GetBaseDamage(Source)) --deal 10% less damage for each subsequent target hit, down to a minimum of 50%
-			elseif spellname == "W" then apdmg = 50*Wlvl+30+.6*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 50*Elvl+30+.8*GetBonusAP(Source)
-			elseif spellname == "R" then addmg = 225*Rlvl+25+2*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			end
-		elseif GetObjectName(Source) == "Cassiopeia" then
-			if spellname == "Q" then apdmg = 40*Qlvl+35+.45*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 5*Wlvl+5+.1*GetBonusAP(Source) --xsec
-			elseif spellname == "E" then apdmg = 25*Elvl+30+.55*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 100*Rlvl+50+.5*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Chogath" then
-			if spellname == "Q" then apdmg = 56.25*Qlvl+23.75+GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 50*Wlvl+25+.7*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 15*Elvl+5+.3*GetBonusAP(Source)  --xhit (bonus)
-			elseif spellname == "R" then dmg = 175*Rlvl+125+.7*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Corki" then
-			if spellname == "P" then dmg = .1*(GetBonusDmg(Source)+GetBaseDamage(Source))  --xhit (bonus)
-			elseif spellname == "Q" then apdmg = 50*Qlvl+30+.5*(GetBonusDmg(Source)+GetBaseDamage(Source))+.5*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 30*Wlvl+30+.4*GetBonusAP(Source) --xsec (2.5 sec)
-			elseif spellname == "E" then addmg = 12*Elvl+8+.4*(GetBonusDmg(Source)+GetBaseDamage(Source)) --xsec (4 sec)
-			elseif spellname == "R" then apdmg = math.max(70*Rlvl+50+.3*GetBonusAP(Source)+(.1*Rlvl+.1)*(GetBonusDmg(Source)+GetBaseDamage(Source)),(70*Rlvl+50+.3*GetBonusAP(Source)+(.1*Rlvl+.1)*(GetBonusDmg(Source)+GetBaseDamage(Source)))*1.5*stagedmg3) --150% the big one. stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Darius" then
-			if spellname == "Q" then addmg = math.max(20*Qlvl+(.1*Qlvl+.9)*(GetBonusDmg(Source)+GetBaseDamage(Source)),(20*Qlvl+(.1*Qlvl+.9)*(GetBonusDmg(Source)+GetBaseDamage(Source)))*1.5*stagedmg3) --150% Champions in the outer half. stage3: Max damage
-			elseif spellname == "W" then addmg = .4*(GetBonusDmg(Source)+GetBaseDamage(Source))  --(bonus)
-			elseif spellname == "R" then dmg = math.max(100*Rlvl+.75*(GetBonusDmg(Source)+GetBaseDamage(Source)),(100*Rlvl+.75*(GetBonusDmg(Source)+GetBaseDamage(Source)))*2*stagedmg3) --xstack of Hemorrhage deals an additional 20% damage. stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Diana" then
-			if spellname == "P" then apdmg = math.max(5*GetLevel(Source)+15,10*GetLevel(Source)-10,15*GetLevel(Source)-60,20*GetLevel(Source)-125,25*GetLevel(Source)-200)+.8*GetBonusAP(Source)  -- (bonus)
-			elseif spellname == "Q" then apdmg = 35*Qlvl+25+.7*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = math.max(12*Wlvl+10+.2*GetBonusAP(Source),(12*Wlvl+10+.2*GetBonusAP(Source))*3*stagedmg3) --xOrb (3 orbs). stage3: Max damage
-			elseif spellname == "R" then apdmg = 60*Rlvl+40+.6*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "DrMundo" then
-			if spellname == "Q" then apdmg = math.max((2.5*Qlvl+12.5)*GetCurrentHP(target)/100,50*Qlvl+30)
-			elseif spellname == "W" then apdmg = 15*Wlvl+20+.2*GetBonusAP(Source) --xsec
-			end
-		elseif GetObjectName(Source) == "Draven" then
-			if spellname == "Q" then addmg = (.1*Qlvl+.35)*(GetBonusDmg(Source)+GetBaseDamage(Source))  --xhit (bonus)
-			elseif spellname == "E" then addmg = 35*Elvl+35+.5*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "R" then addmg = 100*Rlvl+75+1.1*(GetBonusDmg(Source)+GetBaseDamage(Source)) --xhit (max 2 hits), deals 8% less damage for each unit hit, down to a minimum of 40%
-			end
-		elseif GetObjectName(Source) == "Ekko" then
-		    if spellname == "P" then apdmg = 10+10*GetLevel(Source)+.8*GetBonusAP(Source)
-			elseif spellname == "Q" then apdmg = math.max((15*Qlvl+45+.1*GetBonusAP(Source))*stagedmg1,(25*Qlvl+35+.6*GetBonusAP(Source))*stagedmg2,(40*Qlvl+80+.7*GetBonusAP(Source))*stagedmg3) -- Stage 1 : First Cast, Stage 2 : Q Back, Stage 3 : Max Damage
-			elseif spellname == "E" then apdmg = 30*Elvl+20+.2*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 150*Rlvl+50+1.3*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Elise" then
-			if spellname == "P" then apdmg = 10*Rlvl+.1*GetBonusAP(Source) --xhit Spiderling Damage
-			elseif spellname == "Q" then apdmg = 35*Qlvl+5+(4+.03*GetBonusAP(Source))*GetCurrentHP(target)/100
-			elseif spellname == "QM" then apdmg = 40*Qlvl+20+(8+.03*GetBonusAP(Source))*(GetMaxHP(target)-GetCurrentHP(target))/100
-			elseif spellname == "W" then apdmg = 50*Wlvl+25+.8*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 10*Rlvl+.3*GetBonusAP(Source)  --xhit (bonus)
-			end
-		elseif GetObjectName(Source) == "Evelynn" then
-			if spellname == "Q" then apdmg = 10*Qlvl+30+(.05*Qlvl+.3)*GetBonusAP(Source)+(.05*Qlvl+.45)*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "E" then addmg = 40*Elvl+30+GetBonusAP(Source)+(GetBonusDmg(Source)+GetBaseDamage(Source)) --total
-			elseif spellname == "R" then apdmg = (5*Rlvl+10+.01*GetBonusAP(Source))*GetCurrentHP(target)/100
-			end
-		elseif GetObjectName(Source) == "Ezreal" then
-			if spellname == "Q" then addmg = 20*Qlvl+15+.4*GetBonusAP(Source)+.1*(GetBonusDmg(Source)+GetBaseDamage(Source))  -- (bonus)
-			elseif spellname == "W" then apdmg = 45*Wlvl+25+.7*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 50*Elvl+25+.75*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 150*Rlvl+200+.9*GetBonusAP(Source)+(GetBonusDmg(Source)+GetBaseDamage(Source)) --deal 10% less damage for each subsequent target hit, down to a minimum of 30%
-			end
-		elseif GetObjectName(Source) == "FiddleSticks" then
-			if spellname == "W" then apdmg = math.max(30*Wlvl+30+.45*GetBonusAP(Source),(30*Wlvl+30+.45*GetBonusAP(Source))*5*stagedmg3) --xsec (5 sec). stage3: Max damage
-			elseif spellname == "E" then apdmg = math.max(20*Elvl+45+.45*GetBonusAP(Source),(20*Elvl+45+.45*GetBonusAP(Source))*3*stagedmg3) --xbounce. stage3: Max damage
-			elseif spellname == "R" then apdmg = math.max(100*Rlvl+25+.45*GetBonusAP(Source),(100*Rlvl+25+.45*GetBonusAP(Source))*5*stagedmg3) --xsec (5 sec). stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Fiora" then
-			if spellname == "Q" then addmg = 10*Qlvl+55+((15*Qlvl+40)*GetBonusDmg(Source))/100
-			elseif spellname == "W" then apdmg = 40*Wlvl+50+GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Fizz" then
-			if spellname == "Q" then apdmg = 15*Qlvl-5+.3*GetBonusAP(Source)  -- (bonus)
-			elseif spellname == "W" then apdmg = math.max(((20*Wlvl+10+.7*GetBonusAP(Source))+(Wlvl+3)*(GetMaxHP(target)-GetCurrentHP(target))/100)*(stagedmg1+stagedmg3),((10*Wlvl+10+.35*GetBonusAP(Source))+(Wlvl+3)*(GetMaxHP(target)-GetCurrentHP(target))/100)*stagedmg2)  --stage1:when its active. stage2:Passive. stage3:when its active
-			elseif spellname == "E" then apdmg = 50*Elvl+20+.75*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 125*Rlvl+75+GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Galio" then
-			if spellname == "Q" then apdmg = 55*Qlvl+25+.6*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 45*Elvl+15+.5*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = math.max(100*Rlvl+100+.6*GetBonusAP(Source),(100*Rlvl+100+.6*GetBonusAP(Source))*1.8*stagedmg3) --additional 5% damage for each attack suffered while channeling and capping at 40%. stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Gangplank" then
-			if spellname == "P" then addmg = 10+GetLevel(Source)+20+1.2*GetBonusDmg(Source)  --xstack
-			elseif spellname == "Q" then addmg = 25*Qlvl-5*(GetBonusDmg(Source)+GetBaseDamage(Source))  --without counting on-hit effects
-			elseif spellname == "R" then apdmg = 20*Rlvl+30+.1*GetBonusAP(Source) --xSec (7 sec)
-			end
-		elseif GetObjectName(Source) == "Garen" then
-			if spellname == "Q" then addmg = 25*Qlvl+5+.4*(GetBonusDmg(Source)+GetBaseDamage(Source))  -- (bonus)
-			elseif spellname == "E" then addmg = math.max(25*Elvl-5+(.1*Elvl+.6)*(GetBonusDmg(Source)+GetBaseDamage(Source)),(25*Elvl-5+(.1*Elvl+.6)*(GetBonusDmg(Source)+GetBaseDamage(Source)))*2.5*stagedmg3) --xsec (2.5 sec). stage3: Max damage
-			elseif spellname == "R" then apdmg = 175*Rlvl+(GetMaxHP(target)-GetCurrentHP(target))/((8-Rlvl)/2)
-			end
-		elseif GetObjectName(Source) == "Gnar" then
-			if spellname == "Q" then addmg = 30*Qlvl-25+1.15*(GetBonusDmg(Source)+GetBaseDamage(Source)) -- 50% damage beyond the first
-			elseif spellname == "QM" then addmg = 40*Qlvl-35+1.2*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "W" then apdmg = 10*Wlvl+GetBonusAP(Source)+(2*Wlvl+4)*GetMaxHP(target)/100
-			elseif spellname == "WM" then addmg = 20*Wlvl+5+(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "E" then addmg = 40*Elvl-20+6*GetMaxHP(Source)/100
-			elseif spellname == "EM" then addmg = 40*Elvl-20+6*GetMaxHP(Source)/100
-			elseif spellname == "R" then addmg = math.max(100*Rlvl+100+.2*(GetBonusDmg(Source)+GetBaseDamage(Source))+.5*GetBonusAP(Source),(100*Rlvl+100+.2*(GetBonusDmg(Source)+GetBaseDamage(Source))+.5*GetBonusAP(Source))*1.5*stagedmg3) --x1.5 If collide with terrain. stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Gragas" then
-			if spellname == "Q" then apdmg = math.max(40*Qlvl+40+.6*GetBonusAP(Source),(40*Qlvl+40+.6*GetBonusAP(Source))*1.5*stagedmg3) --Damage increase by up to 50% over 2 seconds. stage3: Max damage
-			elseif spellname == "W" then apdmg = 30*Wlvl-10+.3*GetBonusAP(Source)+(.01*Wlvl+.07)*GetMaxHP(target)  -- (bonus)
-			elseif spellname == "E" then apdmg = 50*Elvl+30+.6*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 100*Rlvl+100+.7*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Graves" then
-			if spellname == "Q" then addmg = math.max(30*Qlvl+30+.75*(GetBonusDmg(Source)+GetBaseDamage(Source)),(30*Qlvl+30+.75*(GetBonusDmg(Source)+GetBaseDamage(Source)))*2*stagedmg3) --xbullet , 50% damage xeach bullet beyond the first. stage3: Max damage
-			elseif spellname == "W" then apdmg = 50*Wlvl+10+.6*GetBonusAP(Source)
-			elseif spellname == "R" then addmg = math.max((150*Rlvl+100+1.5*(GetBonusDmg(Source)+GetBaseDamage(Source)))*(stagedmg1+stagedmg3),(120*Rlvl+80+1.2*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg2) --stage1-3:Initial. stage2:Explosion.
-			end
-		elseif GetObjectName(Source) == "Hecarim" then
-			if spellname == "Q" then addmg = 35*Qlvl+25+.6*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "W" then apdmg = math.max(11.25*Wlvl+8.75+.2*GetBonusAP(Source),(11.25*Wlvl+8.75+.2*GetBonusAP(Source))*4*stagedmg3) --xsec (4 sec). stage3: Max damage
-			elseif spellname == "E" then addmg = math.max(35*Elvl+5+.5*(GetBonusDmg(Source)+GetBaseDamage(Source)),(35*Elvl+5+.5*(GetBonusDmg(Source)+GetBaseDamage(Source)))*2*stagedmg3) --Minimum , 200% Maximum (bonus). stage3: Max damage
-			elseif spellname == "R" then apdmg = 100*Rlvl+50+GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Heimerdinger" then
-			if spellname == "Q" then apdmg = math.max((5.5*Qlvl+6.5+.15*GetBonusAP(Source))*stagedmg1,(math.max(20*Qlvl+20,25*Qlvl+5)+.55*GetBonusAP(Source))*stagedmg2,(60*Rlvl+120+.7*GetBonusAP(Source))*stagedmg3) --stage1:x Turrets attack. stage2:Beam. stage3:UPGRADE Beam
-			elseif spellname == "W" then apdmg = 30*Wlvl+30+.45*GetBonusAP(Source) --x Rocket, 20% magic damage for each rocket beyond the first
-			elseif spellname == "E" then apdmg = 40*Elvl+20+.6*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = math.max((20*Rlvl+50+.3*GetBonusAP(Source))*stagedmg1,(45*Rlvl+90+.45*GetBonusAP(Source))*stagedmg2,(50*Rlvl+100+.6*GetBonusAP(Source))*stagedmg3) --stage1:x Turrets attack. stage2:x Rocket, 20% magic damage for each rocket beyond the first. stage3:x Bounce
-			end
-		elseif GetObjectName(Source) == "Irelia" then
-			if spellname == "Q" then addmg = 30*Qlvl-10  -- (bonus)
-			elseif spellname == "W" then dmg = 15*Wlvl  --xhit (bonus)
-			elseif spellname == "E" then apdmg = 40*Elvl+40+.5*GetBonusAP(Source)
-			elseif spellname == "R" then addmg = 40*Rlvl+40+.5*GetBonusAP(Source)+.6*(GetBonusDmg(Source)+GetBaseDamage(Source)) --xbl(GetBonusDmg(Source)+GetBaseDamage(Source))e
-			end
-		elseif GetObjectName(Source) == "Janna" then
-			if spellname == "Q" then apdmg = math.max((25*Qlvl+35+.35*GetBonusAP(Source))*stagedmg1,(5*Qlvl+10+.1*GetBonusAP(Source))*stagedmg2,(25*Qlvl+35+.35*GetBonusAP(Source)+(5*Qlvl+10+.1*GetBonusAP(Source))*3)*stagedmg3) --stage1:Initial. stage2:(GetBonusDmg(Source)+GetBaseDamage(Source))ditional Damage xsec (3 sec). stage3:Max damage
-			elseif spellname == "W" then apdmg = 55*Wlvl+5+.5*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "JarvanIV" then
-			if spellname == "P" then addmg = math.min(.01*GetMaxHP(target),400) 
-			elseif spellname == "Q" then addmg = 45*Qlvl+25+1.2*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "E" then apdmg = 45*Elvl+15+.8*GetBonusAP(Source)
-			elseif spellname == "R" then addmg = 125*Rlvl+75+1.5*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			end
-		elseif GetObjectName(Source) == "Jax" then
-			if spellname == "Q" then addmg = 40*Qlvl+30+.6*GetBonusAP(Source)+(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "W" then apdmg = 35*Wlvl+5+.6*GetBonusAP(Source) 
-			elseif spellname == "E" then addmg = math.max(25*Elvl+25+.5*(GetBonusDmg(Source)+GetBaseDamage(Source)),(25*Elvl+25+.5*(GetBonusDmg(Source)+GetBaseDamage(Source)))*2*stagedmg3) --deals 20% (GetBonusDmg(Source)+GetBaseDamage(Source))ditional damage for each attack dodged to a maximum of 100%. stage3: Max damage
-			elseif spellname == "R" then apdmg = 60*Rlvl+40+.7*GetBonusAP(Source)  --every third basic attack (bonus)
-			end
-		elseif GetObjectName(Source) == "Jayce" then
-			if spellname == "Q" then addmg = math.max(50*Qlvl+20+1.2*(GetBonusDmg(Source)+GetBaseDamage(Source)),(50*Qlvl+20+1.2*(GetBonusDmg(Source)+GetBaseDamage(Source)))*1.4*stagedmg3) --If its fired through an Acceleration Gate damage will increase by 40%. stage3: Max damage
-			elseif spellname == "QM" then addmg = 40*Qlvl-10+(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "W" then dmg = 8*Wlvl+62 --% damage
-			elseif spellname == "WM" then apdmg = math.max(15*Wlvl+10+.25*GetBonusAP(Source),(15*Wlvl+10+.25*GetBonusAP(Source))*4*stagedmg3) --xsec (4 sec). stage3: Max damage
-			elseif spellname == "EM" then apdmg = (GetBonusDmg(Source)+GetBaseDamage(Source))+((2.4*Elvl+6)*GetMaxHP(target)/100)
-			elseif spellname == "R" then apdmg = 40*Rlvl-20 
-			end
-		elseif GetObjectName(Source) == "Jinx" then
-			if spellname == "Q" then addmg = .1*(GetBonusDmg(Source)+GetBaseDamage(Source)) 
-			elseif spellname == "W" then addmg = 50*Wlvl-40+1.4*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "E" then apdmg = 55*Elvl+25+GetBonusAP(Source) -- per Chomper
-			elseif spellname == "R" then addmg = math.max(((50*Rlvl+75+.5*(GetBonusDmg(Source)+GetBaseDamage(Source)))*2+(0.05*Rlvl+0.2)*(GetMaxHP(target)-GetCurrentHP(target)))*stagedmg1,(10*Rlvl+15+.1*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg2,(0.05*Rlvl+0.2)*(GetMaxHP(target)-GetCurrentHP(target))*stagedmg3) --stage1:Maximum (after 1500 units)+(GetBonusDmg(Source)+GetBaseDamage(Source))ditional Damage. stage2:Minimum Base (Maximum = x2). stage3: (GetBonusDmg(Source)+GetBaseDamage(Source))ditional Damage
-			end
-		elseif GetObjectName(Source) == "Kalista" then
-			if spellname == "Q" then addmg = 60*Qlvl-50+(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "W" then apdmg = (2*Wlvl+10)*GetCurrentHP(target)/100
-			elseif spellname == "E" then addmg = math.max((10*Elvl+10+.6*(GetBonusDmg(Source)+GetBaseDamage(Source)))*(stagedmg1+stagedmg3),((10*Elvl+10+.6*(GetBonusDmg(Source)+GetBaseDamage(Source)))*(5*Elvl+20)/100)*stagedmg2) --stage1,3:Base. stage2:xSpeGetArmor(Source).
-			end
-		elseif GetObjectName(Source) == "Karma" then
-			if spellname == "Q" then apdmg = math.max((45*Qlvl+35+.6*GetBonusAP(Source))*stagedmg1,(50*Rlvl-25+.3*GetBonusAP(Source))*stagedmg2,(100*Rlvl-50+.6*GetBonusAP(Source))*stagedmg3) --stage1:Initial. stage2:Bonus (R). stage3: Detonation (R)
-			elseif spellname == "W" then apdmg = 50*Wlvl+10+.9*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Karthus" then
-			if spellname == "Q" then apdmg = 40*Qlvl+40+.6*GetBonusAP(Source) --50% damage if it hits multiple units
-			elseif spellname == "E" then apdmg = 20*Elvl+10+.2*GetBonusAP(Source) --xsec
-			elseif spellname == "R" then apdmg = 150*Rlvl+100+.6*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Kassadin" then
-			if spellname == "Q" then apdmg = 25*Qlvl+45+.7*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = math.max((25*Wlvl+15+.6*GetBonusAP(Source))*(stagedmg1+stagedmg3),(20+.1*GetBonusAP(Source))*stagedmg2)  -- stage1-3:Active. stage2: Pasive.
-			elseif spellname == "E" then apdmg = 25*Elvl+55+.7*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = math.max((20*Rlvl+60+.2*GetBonusAP(Source)+.02*GetMaxMana(Source))*(stagedmg1+stagedmg3),(10*Rlvl+30+.1*GetBonusAP(Source)+.01*GetMaxMana(Source))*stagedmg2) --stage1-3:Initial. stage2:additional xstack (4 stack).
-			end
-		elseif GetObjectName(Source) == "Katarina" then
-			if spellname == "Q" then apdmg = math.max((25*Qlvl+35+.45*GetBonusAP(Source))*stagedmg1,(15*Qlvl+.15*GetBonusAP(Source))*stagedmg2,(40*Qlvl+35+.6*GetBonusAP(Source))*stagedmg3) --stage1:Dagger, Each subsequent hit deals 10% less damage. stage2:On-hit. stage3: Max damage
-			elseif spellname == "W" then apdmg = 35*Wlvl+5+.25*GetBonusAP(Source)+.6*GetBonusDmg(Source)
-			elseif spellname == "E" then apdmg = 30*Elvl+10+.25*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = math.max(20*Rlvl+15+.25*GetBonusAP(Source)+.375*(GetBonusDmg(Source)+GetBaseDamage(Source)),(20*Rlvl+15+.25*GetBonusAP(Source)+.375*(GetBonusDmg(Source)+GetBaseDamage(Source)))*10*stagedmg3) --xdagger (champion can be hit by a maximum of 10 daggers (2 sec)). stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Kayle" then
-			if spellname == "Q" then apdmg = 50*Qlvl+10+.6*GetBonusAP(Source)+(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "E" then apdmg = 10*Elvl+10+.25*GetBonusAP(Source)  --xhit (bonus)
-			end
-		elseif GetObjectName(Source) == "Kennen" then
-			if spellname == "Q" then apdmg = 40*Qlvl+35+.75*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = math.max((30*Wlvl+35+.55*GetBonusAP(Source))*(stagedmg1+stagedmg3),(.1*Wlvl+.3)*(GetBonusDmg(Source)+GetBaseDamage(Source))*stagedmg2)  --stage1:Active. stage2:On-hit. stage3: stage1
-			elseif spellname == "E" then apdmg = 40*Elvl+45+.6*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = math.max(65*Rlvl+15+.4*GetBonusAP(Source),(65*Rlvl+15+.4*GetBonusAP(Source))*3*stagedmg3) --xbolt (max 3 bolts). stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Khazix" then
-			if spellname == "P" then apdmg = math.max(5*GetLevel(Source)+10,10*GetLevel(Source)-5,15*GetLevel(Source)-55)-math.max(0,5*(GetLevel(Source)-13))+.5*GetBonusAP(Source)  -- (bonus)
-			elseif spellname == "Q" then addmg = math.max((25*Qlvl+45+1.2*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg1,(25*Qlvl+45+1.2*(GetBonusDmg(Source)+GetBaseDamage(Source)))*1.3*stagedmg2,((25*Qlvl+45+1.2*(GetBonusDmg(Source)+GetBaseDamage(Source)))*1.3+10*GetLevel(Source)+1.04*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg3) --stage1:Normal. stage2:to Isolated. stage3:Evolved to Isolated.
-			elseif spellname == "W" then addmg = 30*Wlvl+50+(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "E" then addmg = 35*Elvl+30+.2*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			end
-                elseif GetObjectName(Source) == "Kindred" then
-			if spellname == "P" then addmg = 0.0125*GetCurrentHP(target)
-                        elseif spellname == "Q" then addmg = 30*Qlvl+30+.2*(GetBonusDmg(Source)+GetBaseDamage(Source))
-                        elseif spellname == "W" then addmg = 5*Wlvl+20+.4*(GetBonusDmg(Source)+GetBaseDamage(Source))
-                        elseif spellname == "E" then addmg = 30*Elvl+50+0.05*GetMaxHP(target)+.2*(GetBonusDmg(Source)+GetBaseDamage(Source))
-                        end
-	        elseif GetObjectName(Source) == "KogMaw" then
-			if spellname == "P" then dmg = 100+25*GetLevel(Source)
-			elseif spellname == "Q" then apdmg = 50*Qlvl+30+.5*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = (Wlvl+1+.01*GetBonusAP(Source))*GetMaxHP(target)/100  --xhit (bonus)
-			elseif spellname == "E" then apdmg = 50*Elvl+10+.7*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 80*Rlvl+80+.3*GetBonusAP(Source)+.5*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			end
-		elseif GetObjectName(Source) == "Leblanc" then
-			if spellname == "Q" then apdmg = math.max(25*Qlvl+30+.4*GetBonusAP(Source),(25*Qlvl+30+.4*GetBonusAP(Source))*2*stagedmg3) --Initial or mark. stage3: Max damage
-			elseif spellname == "W" then apdmg = 40*Wlvl+45+.6*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = math.max(25*Qlvl+15+.5*GetBonusAP(Source),(25*Qlvl+15+.5*GetBonusAP(Source))*2*stagedmg3) --Initial or Delayed. stage3: Max damage
-			elseif spellname == "R" then apdmg = math.max((100*Rlvl+.6*GetBonusAP(Source))*stagedmg1,(150*Rlvl+.9*GetBonusAP(Source))*stagedmg2,(100*Rlvl+.6*GetBonusAP(Source))*stagedmg3) --stage1:Q Initial or mark. stage2:W. stage3:E Initial or Delayed
-			end
-		elseif GetObjectName(Source) == "LeeSin" then
-			if spellname == "Q" then addmg = math.max((30*Qlvl+20+.9*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg1,(30*Qlvl+20+.9*(GetBonusDmg(Source)+GetBaseDamage(Source))+8*(GetMaxHP(target)-GetCurrentHP(target))/100)*stagedmg2,(60*Qlvl+40+1.8*(GetBonusDmg(Source)+GetBaseDamage(Source))+8*(GetMaxHP(target)-GetCurrentHP(target))/100)*stagedmg3) --stage1:Sonic Wave. stage2:Resonating Strike. stage3: Max damage
-			elseif spellname == "E" then apdmg = 35*Qlvl+25+(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "R" then addmg = 200*Rlvl+2*(GetBonusDmg(Source)+GetBaseDamage(Source))*stagedmg1,(200*Rlvl+2*(GetBonusDmg(Source)+GetBaseDamage(Source))+(3*GetCastLevel(Source,_R)+12)*GetMaxHP(target)/100)
-			end
-		elseif GetObjectName(Source) == "Leona" then
-			if spellname == "P" then apdmg = (-1.25)*(3*(-1)^GetLevel(Source)-6*GetLevel(Source)-7)
-			elseif spellname == "Q" then apdmg = 30*Qlvl+10+.3*GetBonusAP(Source)  -- (bonus)
-			elseif spellname == "W" then apdmg = 50*Wlvl+10+.4*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 40*Elvl+20+.4*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 100*Rlvl+50+.8*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Lissandra" then
-			if spellname == "Q" then apdmg = 30*Qlvl+40+.65*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 40*Wlvl+30+.4*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 45*Elvl+25+.6*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 100*Rlvl+50+.7*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Lucian" then
-			if spellname == "P" then addmg = (.3+.1*math.floor((GetLevel(Source)-1)/5))*(GetBonusDmg(Source)+GetBaseDamage(Source)) 
-			elseif spellname == "Q" then addmg = 30*Qlvl+50+(15*Qlvl+45)*(GetBonusDmg(Source)+GetBaseDamage(Source))/100
-			elseif spellname == "W" then apdmg = 40*Wlvl+20+.9*GetBonusAP(Source)
-			elseif spellname == "R" then addmg = 10*Rlvl+30+.1*GetBonusAP(Source)+.3*(GetBonusDmg(Source)+GetBaseDamage(Source)) --per shot
-			end
-		elseif GetObjectName(Source) == "Lulu" then
-			if spellname == "P" then apdmg = math.max(4*math.floor(GetLevel(Source)/2+.5)-1+.15*GetBonusAP(Source),(4*math.floor(GetLevel(Source)/2+.5)-1+.15*GetBonusAP(Source))*3*stagedmg3) --xbolt (3 bolts). stage: Max damage
-			elseif spellname == "Q" then apdmg = 45*Qlvl+35+.5*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 30*Elvl+50+.4*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Lux" then
-			if spellname == "P" then apdmg = 8*GetLevel(Source)+10+.2*GetBonusAP(Source)
-			elseif spellname == "Q" then apdmg = 50*Qlvl+10+.7*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 45*Elvl+15+.6*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 100*Rlvl+200+.75*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Malphite" then
-			if spellname == "Q" then apdmg = 50*Qlvl+20+.6*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 15*Wlvl+.1*GetBonusAP(Source)+.1*GetArmor(Source)
-			elseif spellname == "E" then apdmg = 40*Elvl+20+.2*GetBonusAP(Source)+.3*GetArmor(Source)
-			elseif spellname == "R" then apdmg = 100*Rlvl+100+GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Malzahar" then
-			if spellname == "P" then addmg = 20+5*GetLevel(Source)+(GetBonusDmg(Source)+GetBaseDamage(Source)) --Voidling xhit
-			elseif spellname == "Q" then apdmg = 55*Qlvl+25+.8*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = (Wlvl+3+.01*GetBonusAP(Source))*GetMaxHP(target)/100 --xsec (5 sec)
-			elseif spellname == "E" then apdmg = 60*Elvl+20+.8*GetBonusAP(Source) --over 4 sec
-			elseif spellname == "R" then apdmg = 150*Rlvl+100+1.3*GetBonusAP(Source) --over 2.5 sec
-			end
-		elseif GetObjectName(Source) == "Maokai" then
-			if spellname == "Q" then apdmg = 45*Qlvl+25+.4*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = (1*Wlvl+8+.03*GetBonusAP(Source))*GetMaxHP(target)/100
-			elseif spellname == "E" then apdmg = math.max((20*Elvl+20+.4*GetBonusAP(Source))*stagedmg1,(40*Elvl+40+.6*GetBonusAP(Source))*stagedmg2,(60*Elvl+60+GetBonusAP(Source))*stagedmg3) --stage1:Impact. stage2:Explosion. stage3: Max damage
-			elseif spellname == "R" then apdmg = 50*Rlvl+50+.5*GetBonusAP(Source)+(50*Rlvl+150)*stagedmg3 -- +2 per point of damage absorbed (max 100/150/200). stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "MasterYi" then
-			if spellname == "P" then addmg = .5*(GetBonusDmg(Source)+GetBaseDamage(Source)) 
-			elseif spellname == "Q" then addmg = math.max((35*Qlvl-10+(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg1,(.6*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg2,(35*Qlvl-10+1.6*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg3) --stage1:normal. stage2:critically strike (bonus). stage3: critically strike
-			elseif spellname == "E" then dmg = 5*Elvl+5+((5/2)*Elvl+15/2)*(GetBonusDmg(Source)+GetBaseDamage(Source))/100
-			end
-		elseif GetObjectName(Source) == "MissFortune" then
-			if spellname == "Q" then addmg = math.max((15*Qlvl+5+.85*(GetBonusDmg(Source)+GetBaseDamage(Source))+.35*GetBonusAP(Source))*(stagedmg1+stagedmg3),(30*Qlvl+10+(GetBonusDmg(Source)+GetBaseDamage(Source))+.5*GetBonusAP(Source))*stagedmg2) --stage1-stage3:1st target. stage2:2nd target.
-			elseif spellname == "W" then apdmg = .06*(GetBonusDmg(Source)+GetBaseDamage(Source)) --xstack (max 5+Rlvl stacks) (bonus)
-			elseif spellname == "E" then apdmg = 55*Elvl+35+.8*GetBonusAP(Source) --over 3 seconds
-			elseif spellname == "R" then addmg = math.max(25*Rlvl+25,50*Rlvl-25)+.2*GetBonusAP(Source) --xwave (8 waves) GetBonusAP(Source)plies a stack of Impure Shots
-			end
-		elseif GetObjectName(Source) == "Mordekaiser" then
-			if spellname == "Q" then apdmg = math.max(30*Qlvl+50+.4*GetBonusAP(Source)+(GetBonusDmg(Source)+GetBaseDamage(Source)),(30*Qlvl+50+.4*GetBonusAP(Source)+(GetBonusDmg(Source)+GetBaseDamage(Source)))*1.65*stagedmg3) --If the target is alone, the ability deals 65% more damage. stage3: Max damage
-			elseif spellname == "W" then apdmg = math.max(12*Wlvl+8+.15*GetBonusAP(Source),(12*Wlvl+8+.15*GetBonusAP(Source))*6*stagedmg3) --xsec (6 sec). stage3: Max damage
-			elseif spellname == "E" then apdmg = 45*Elvl+25+.6*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = (5*Rlvl+19+.04*GetBonusAP(Source))*GetMaxHP(target)/100 --half Initial and half over 10 sec
-			end
-		elseif GetObjectName(Source) == "Morgana" then
-			if spellname == "Q" then apdmg = 55*Qlvl+25+.6*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = (8*Wlvl+.11*GetBonusAP(Source))*(1+.5*(1-GetCurrentHP(target)/GetMaxHP(target))) --x 1/2 sec (5 sec)
-			elseif spellname == "R" then apdmg = math.max(75*Rlvl+75+.7*GetBonusAP(Source),(75*Rlvl+75+.7*GetBonusAP(Source))*2*stagedmg3) --x2 If the target stay in range for the full duration. stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Nami" then
-			if spellname == "Q" then apdmg = 55*Qlvl+20+.5*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 40*Wlvl+30+.5*GetBonusAP(Source) --The percentage power of later bounces now scales. Each bounce gains 0.75% more power per 10 GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 15*Elvl+10+.2*GetBonusAP(Source)  --xhit (max 3 hits)
-			elseif spellname == "R" then apdmg = 100*Rlvl+50+.6*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Nasus" then
-			if spellname == "Q" then addmg = 20*Qlvl+10  --+3 per enemy killed by Siphoning Strike (bonus)
-			elseif spellname == "E" then apdmg = math.max((80*Elvl+30+1.2*GetBonusAP(Source))/5,(80*Elvl+30+1.2*GetBonusAP(Source))*stagedmg3) --xsec (5 sec). stage3: Max damage
-			elseif spellname == "R" then apdmg = (Rlvl+2+.01*GetBonusAP(Source))*GetMaxHP(target)/100 --xsec (15 sec)
-			end
-		elseif GetObjectName(Source) == "Nautilus" then
-			if spellname == "P" then addmg = 2+6*GetLevel(Source) 
-			elseif spellname == "Q" then apdmg = 45*Qlvl+15+.75*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 10*Wlvl+20+.4*GetBonusAP(Source)  --xhit (bonus)
-			elseif spellname == "E" then apdmg = math.max(35*Elvl+25+.5*GetBonusAP(Source),(35*Elvl+25+.5*GetBonusAP(Source))*2*stagedmg3) --xexplosions , 50% less damage from additional explosions. stage3: Max damage
-			elseif spellname == "R" then apdmg = 125*Rlvl+75+.8*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Nidalee" then
-			if spellname == "Q" then apdmg = 20*Qlvl+30+.4*GetBonusAP(Source) --deals 300% damage the further away the target is, gains damage from 525 units until 1300 units
-			elseif spellname == "QM" then apdmg = (math.max(4,30*Rlvl-40,40*Rlvl-70)+.75*(GetBonusDmg(Source)+GetBaseDamage(Source))+.36*GetBonusAP(Source))*(1+1.5*(GetMaxHP(target)-GetCurrentHP(target))/GetMaxHP(target)) --Deals 33% increased damage against Hunted
-			elseif spellname == "W" then apdmg = 40*Qlvl+.4*GetBonusAP(Source) -- over 4 sec
-			elseif spellname == "WM" then apdmg = 50*Rlvl+.3*GetBonusAP(Source)
-			elseif spellname == "EM" then apdmg = 60*Rlvl+10+.45*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Nocturne" then
-			if spellname == "P" then addmg = .2*(GetBonusDmg(Source)+GetBaseDamage(Source))  --(bonus)
-			elseif spellname == "Q" then addmg = 45*Qlvl+15+.75*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "E" then apdmg = 40*Elvl+40+GetBonusAP(Source)
-			elseif spellname == "R" then addmg = 100*Rlvl+50+1.2*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			end
-		elseif GetObjectName(Source) == "Nunu" then
-			if spellname == "Q" then apdmg = .01*GetMaxHP(Source) --xhit Ornery Monster Tails passive
-			elseif spellname == "E" then apdmg = 37.5*Elvl+47.5+GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 250*Rlvl+375+2.5*GetBonusAP(Source) --After 3 sec
-			end
-		elseif GetObjectName(Source) == "Olaf" then
-			if spellname == "Q" then addmg = 45*Qlvl+25+(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "E" then dmg =45*Elvl+25+.4*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			end
-		elseif GetObjectName(Source) == "Orianna" then
-			if spellname == "P" then apdmg = 8*math.floor((GetLevel(Source)+2)/3)+2+0.15*GetBonusAP(Source) --xhit subsequent attack deals 20% more dmg up to 40%
-			elseif spellname == "Q" then apdmg = 30*Qlvl+30+.5*GetBonusAP(Source) --10% less damage for each subsequent target hit down to a minimum of 40%
-			elseif spellname == "W" then apdmg = 45*Wlvl+25+.7*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 30*Elvl+30+.3*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 75*Rlvl+75+.7*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Pantheon" then
-			if spellname == "Q" then addmg = (40*Qlvl+25+1.4*(GetBonusDmg(Source)+GetBaseDamage(Source)))*(1+math.floor((GetMaxHP(target)-GetCurrentHP(target))/(GetMaxHP(target)*0.85)))
-			elseif spellname == "W" then apdmg = 25*Wlvl+25+GetBonusAP(Source)
-			elseif spellname == "E" then addmg = math.max(20*Elvl+6+1.2*(GetBonusDmg(Source)+GetBaseDamage(Source)),(20*Elvl+6+1.2*(GetBonusDmg(Source)+GetBaseDamage(Source)))*3*stagedmg3) --xStrike (3 strikes). stage3: Max damage
-			elseif spellname == "R" then apdmg = 300*Rlvl+100+GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Poppy" then
-			if spellname == "Q" then apdmg = 25*Qlvl+.6*GetBonusAP(Source)+(GetBonusDmg(Source)+GetBaseDamage(Source))+math.min(0.08*GetMaxHP(target),75*Qlvl) --(applies on hit) 
-			elseif spellname == "E" then apdmg = math.max((25*Elvl+25+.4*GetBonusAP(Source))*stagedmg1,(50*Elvl+25+.4*GetBonusAP(Source))*stagedmg2,(75*Elvl+50+.8*GetBonusAP(Source))*stagedmg3) --stage1:initial. stage2:Collision. stage3: Max damage
-			elseif spellname == "R" then dmg =10*Rlvl+10 --% Increased Damage
-			end
-		elseif GetObjectName(Source) == "Quinn" then
-			if spellname == "P" then addmg = math.max(10*GetLevel(Source)+15,15*GetLevel(Source)-55)+.5*(GetBonusDmg(Source)+GetBaseDamage(Source))  --(bonus)
-			elseif spellname == "Q" then addmg = 40*Qlvl+30+.65*(GetBonusDmg(Source)+GetBaseDamage(Source))+.5*GetBonusAP(Source)
-			elseif spellname == "E" then addmg = 30*Elvl+10+.2*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "R" then addmg = (50*Rlvl+70+.5*(GetBonusDmg(Source)+GetBaseDamage(Source)))*(2-GetCurrentHP(target)/GetMaxHP(target))
-			end
-		elseif GetObjectName(Source) == "Rammus" then
-			if spellname == "Q" then apdmg = 50*Qlvl+50+GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 10*Wlvl+15+.1*GetArmor(Source) --x each attack suffered
-			elseif spellname == "R" then apdmg = 65*Rlvl+.3*GetBonusAP(Source) --xsec (8 sec)
-			end
-		elseif GetObjectName(Source) == "RekSai" then
-			if spellname == "Q" then addmg = 10*Qlvl+5+.2*(GetBonusDmg(Source)+GetBaseDamage(Source))  --(bonus)
-			elseif spellname == "QM" then apdmg = 30*Qlvl+30+.7*GetBonusAP(Source)
-			elseif spellname == "WM" then addmg = 40*Wlvl+.4*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "E" then addmg = (.1*Elvl+.7)*(GetBonusDmg(Source)+GetBaseDamage(Source))*(1+GetCurrentMana(Source)/GetMaxMana(Source))*(1-math.floor(GetCurrentMana(Source)/GetMaxMana(Source))) dmg =(.1*Elvl+.7)*(GetBonusDmg(Source)+GetBaseDamage(Source))*2*math.floor(GetCurrentMana(Source)/GetMaxMana(Source))
-			end
-		elseif GetObjectName(Source) == "Renekton" then
-			if spellname == "Q" then addmg = math.max(30*Qlvl+30+.8*(GetBonusDmg(Source)+GetBaseDamage(Source)),(30*Qlvl+30+.8*(GetBonusDmg(Source)+GetBaseDamage(Source)))*1.5*stagedmg3) --stage1:with 50 fury deals 50% additional damage. stage3: Max damage
-			elseif spellname == "W" then addmg = math.max(20*Wlvl-10+1.5*(GetBonusDmg(Source)+GetBaseDamage(Source)),(20*Wlvl-10+1.5*(GetBonusDmg(Source)+GetBaseDamage(Source)))*1.5*stagedmg3) --stage1:with 50 fury deals 50% additional damage. stage3: Max damage -- on hit x2 or x3
-			elseif spellname == "E" then addmg = math.max(30*Elvl+.9*(GetBonusDmg(Source)+GetBaseDamage(Source)),(30*Elvl+.9*(GetBonusDmg(Source)+GetBaseDamage(Source)))*1.5*stagedmg3) --stage1:Slice or Dice , with 50 fury Dice deals 50% additional damage. stage3: Max damage of Dice
-			elseif spellname == "R" then apdmg = math.max(30*Rlvl,60*Rlvl-60)+.1*GetBonusAP(Source) --xsec (15 sec)
-			end
-		elseif GetObjectName(Source) == "Rengar" then
-			if spellname == "Q" then addmg = math.max((30*Qlvl+(.05*Qlvl-.05)*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg1,(math.min(15*GetLevel(Source)+15,10*GetLevel(Source)+60)+.5*(GetBonusDmg(Source)+GetBaseDamage(Source)))*(stagedmg2+stagedmg3))  --stage1:Savagery. stage2-stage3:Empowered Savagery.
-			elseif spellname == "W" then apdmg = math.max((30*Wlvl+20+.8*GetBonusAP(Source))*stagedmg1,(math.min(15*GetLevel(Source)+25,math.max(145,10*GetLevel(Source)+60))+.8*GetBonusAP(Source))*(stagedmg2+stagedmg3)) --stage1:Battle Roar. stage2-stage3:Empowered Battle Roar.
-			elseif spellname == "E" then addmg = math.max((50*Elvl+.7*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg1,(math.min(25*GetLevel(Source)+25,10*GetLevel(Source)+160)+.7*(GetBonusDmg(Source)+GetBaseDamage(Source)))*(stagedmg2+stagedmg3))
-			end
-		elseif GetObjectName(Source) == "Riven" then
-			if spellname == "P" then addmg = 5+math.max(5*math.floor((GetLevel(Source)+2)/3)+10,10*math.floor((GetLevel(Source)+2)/3)-15)*(GetBonusDmg(Source)+GetBaseDamage(Source))/100 --xcharge
-			elseif spellname == "Q" then addmg = 20*Qlvl-10+(.05*Qlvl+.35)*(GetBonusDmg(Source)+GetBaseDamage(Source)) --xstrike (3 strikes)
-			elseif spellname == "W" then addmg = 30*Wlvl+20+(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "R" then addmg = math.min((40*Rlvl+40+.6*(GetBonusDmg(Source)+GetBaseDamage(Source)))*(1+(100-25)/100*8/3),120*Rlvl+120+1.8*(GetBonusDmg(Source)+GetBaseDamage(Source)))
-			end
-		elseif GetObjectName(Source) == "Rumble" then
-			if spellname == "P" then apdmg = 20+5*GetLevel(Source)+.25*GetBonusAP(Source)  --xhit
-			elseif spellname == "Q" then apdmg = math.max(20*Qlvl+5+.33*GetBonusAP(Source),(20*Qlvl+5+.33*GetBonusAP(Source))*3*stagedmg3) --xsec (3 sec) , with 50 heat deals 150% damage. stage3: Max damage , with 50 heat deals 150% damage
-			elseif spellname == "E" then apdmg = 25*Elvl+20+.4*GetBonusAP(Source) --xshoot (2 shoots) , with 50 heat deals 150% damage
-			elseif spellname == "R" then apdmg = math.max(55*Rlvl+75+.3*GetBonusAP(Source),(55*Rlvl+75+.3*GetBonusAP(Source))*5*stagedmg3) --stage1: xsec (5 sec). stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Ryze" then
-			if spellname == "Q" then apdmg = 25*Qlvl+35+.55*GetBonusAP(Source)+(0.05*Qlvl+0.15)*GetMaxMana(Source)
-			elseif spellname == "W" then apdmg = 20*Wlvl+60+.4*GetBonusAP(Source)+.025*GetMaxMana(Source)
-			elseif spellname == "E" then apdmg = math.max(16*Elvl+20+.2*GetBonusAP(Source)+.02*GetMaxMana(Source),(16*Elvl+34+.3*GetBonusAP(Source)+.02*GetMaxMana(Source))*4*stagedmg3) --xbounce. stage3: Max damage = initial damage + 6 * 1/2 initial damage = 4 initial damage
-			end
-		elseif GetObjectName(Source) == "Sejuani" then
-			if spellname == "Q" then apdmg = 45*Qlvl+35+.4*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = math.max(((.5*Wlvl+3.5+.03*GetBonusAP(Source))*GetMaxHP(target)/100)*stagedmg1,(30*Wlvl+10+.6*GetBonusAP(Source)+(.5*Wlvl+3.5)*GetMaxHP(Source)/100)/4*(stagedmg2+stagedmg3))  --stage1: bonus. stage2-3: xsec (4 sec)
-			elseif spellname == "E" then apdmg = 30*Elvl+30+.5*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 100*Rlvl+50+.8*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Shaco" then
-			if spellname == "Q" then addmg = (.2*Qlvl+.2)*(GetBonusDmg(Source)+GetBaseDamage(Source)) --(bonus)
-			elseif spellname == "W" then apdmg = 15*Wlvl+20+.2*GetBonusAP(Source) --xhit
-			elseif spellname == "E" then apdmg = 40*Elvl+10+GetBonusAP(Source)+(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "R" then apdmg = 150*Rlvl+150+GetBonusAP(Source) --The clone deals 75% of Shaco's damage
-			end
-		elseif GetObjectName(Source) == "Shen" then
-			if spellname == "P" then apdmg = 4+4*GetLevel(Source)+(GetMaxHP(Source)-(428+85*GetLevel(Source)))*.1  --(bonus)
-			elseif spellname == "Q" then apdmg = 40*Qlvl+20+.6*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 35*Elvl+15+.5*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Shyvana" then
-			if spellname == "Q" then addmg = (.05*Qlvl+.75)*(GetBonusDmg(Source)+GetBaseDamage(Source))  --Second Strike
-			elseif spellname == "W" then apdmg = 13*Wlvl+7+.2*(GetBonusDmg(Source)+GetBaseDamage(Source)) --xsec (3 sec + 4 extra sec)
-			elseif spellname == "E" then apdmg = math.max((40*Elvl+20+.6*GetBonusAP(Source))*(stagedmg1+stagedmg3),(2.5*GetMaxHP(target)/100)*stagedmg2) --stage1-3:Active. stage2:Each autoattack that hits debuffed targets
-			elseif spellname == "R" then apdmg = 125*Rlvl+50+.7*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Singed" then
-			if spellname == "Q" then apdmg = 12*Qlvl+10+.3*GetBonusAP(Source) --xsec
-			elseif spellname == "E" then apdmg = 15*Elvl+35+.75*GetBonusAP(Source)+((0.5*Elvl+5.5)*GetMaxHP(target)/100)
-			end
-		elseif GetObjectName(Source) == "Sion" then
-			if spellname == "P" then addmg = 10*GetMaxHP(target)/100 
-			elseif spellname == "Q" then addmg = 20*Qlvl+.65*(GetBonusDmg(Source)+GetBaseDamage(Source)) --Minimum, x3 over 2 sec
-			elseif spellname == "W" then apdmg = 25*Wlvl+15+.4*GetBonusAP(Source)+(Wlvl+9)*GetMaxHP(target)/100
-			elseif spellname == "E" then apdmg = math.max(35*Wlvl+35+.4*GetBonusAP(Source),(35*Wlvl+35+.4*GetBonusAP(Source))*1.3*stagedmg3) --Minimum. stage3: x1.3 if hits a minion
-			elseif spellname == "R" then addmg = 150*Qlvl+.4*(GetBonusDmg(Source)+GetBaseDamage(Source)) --Minimum, x2 over 1.75 sec
-			end
-		elseif GetObjectName(Source) == "Sivir" then
-			if spellname == "Q" then addmg = 20*Qlvl+5+.5*GetBonusAP(Source)+(.1*Qlvl+.6)*(GetBonusDmg(Source)+GetBaseDamage(Source)) --x2 , 15% reduced damage to each subsequent target
-			elseif spellname == "W" then addmg = (.05*Wlvl+.45)*(GetBonusDmg(Source)+GetBaseDamage(Source))*stagedmg2  --stage1:bonus to attack target. stage2: Bounce Damage
-			end
-		elseif GetObjectName(Source) == "Skarner" then
-			if spellname == "P" then apdmg = 5*GetLevel(Source)+15 
-			elseif spellname == "Q" then addmg = (10*Qlvl+10+.4*(GetBonusDmg(Source)+GetBaseDamage(Source)))*(stagedmg1+stagedmg3) Qapdmg = (10*Qlvl+10+.2*GetBonusAP(Source))*(stagedmg2+stagedmg3) --stage1:basic. stage2: chGetArmor(Source)ge bonus. stage2: total
-			elseif spellname == "E" then apdmg = 35*Elvl+5+.4*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = math.max((100*Rlvl+100+GetBonusAP(Source))*(stagedmg1+stagedmg3),(25*Rlvl+25)*stagedmg2)--stage1-3:basic. stage2: per stacks of Crystal Venom.
-			end
-		elseif GetObjectName(Source) == "Sona" then
-			if spellname == "P" then apdmg = (math.max(7*GetLevel(Source)+6,8*GetLevel(Source)+3,9*GetLevel(Source)-2,10*GetLevel(Source)-8,15*GetLevel(Source)-78)+.2*GetBonusAP(Source))*(1+stagedmg1)  --stage1: Staccato. stage2:Diminuendo or Tempo
-			elseif spellname == "Q" then apdmg = math.max((40*Qlvl+.5*GetBonusAP(Source))*(stagedmg1+stagedmg3),(10*Qlvl+30+.2*GetBonusAP(Source)+10*Rlvl)*stagedmg2) --stage1-3: Active. stage2:On-hit
-			elseif spellname == "R" then apdmg = 100*Rlvl+50+.5*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Soraka" then
-			if spellname == "Q" then apdmg = math.max(40*Qlvl+30+.35*GetBonusAP(Source),(40*Qlvl+30+.35*GetBonusAP(Source))*1.5*stagedmg3) --stage1: border. stage3: center
-			elseif spellname == "E" then apdmg = 40*Elvl+30+.4*GetBonusAP(Source) --Initial or SecondGetArmor(Source)y
-			end
-		elseif GetObjectName(Source) == "Swain" then
-			if spellname == "Q" then apdmg = math.max(15*Qlvl+10+.3*GetBonusAP(Source),(15*Qlvl+10+.3*GetBonusAP(Source))*3*stagedmg3) --xsec (3 sec). stage3: Max damage
-			elseif spellname == "W" then apdmg = 40*Wlvl+40+.7*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = (40*Elvl+35+.8*GetBonusAP(Source))*(stagedmg1+stagedmg3) dmg =(3*Elvl+5)*stagedmg2 --stage1-3:Active.  stage2:% Extra Damage.
-			elseif spellname == "R" then apdmg = 20*Rlvl+30+.2*GetBonusAP(Source) --xstrike (1 strike x sec)
-			end
-		elseif GetObjectName(Source) == "Syndra" then
-			if spellname == "Q" then apdmg = math.max(45*Qlvl+5+.6*GetBonusAP(Source),(45*Qlvl+5+.6*GetBonusAP(Source))*1.15*(Qlvl-4))
-			elseif spellname == "W" then apdmg = 40*Wlvl+40+.7*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 45*Elvl+25+.4*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = math.max(45*Rlvl+45+.2*GetBonusAP(Source),(45*Rlvl+45+.2*GetBonusAP(Source))*7*stagedmg3) --stage1:xSphere (Minimum 3). stage3:7 Spheres
-			end
-		elseif GetObjectName(Source) == "TahmKench" then
-		    if spellname == "Q" then apdmg = 45*Qlvl+35+.7*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 50*Wlvl+50+.6*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Talon" then
-			if spellname == "Q" then addmg = 40*Qlvl+1.3*(GetBonusDmg(Source)+GetBaseDamage(Source))  --(bonus)
-			elseif spellname == "W" then addmg = math.max(25*Wlvl+5+.6*(GetBonusDmg(Source)+GetBaseDamage(Source)),(25*Wlvl+5+.6*(GetBonusDmg(Source)+GetBaseDamage(Source)))*2*stagedmg3) --x2 if the target is hit twice. stage3: Max damage
-			elseif spellname == "E" then dmg =3*Elvl --% Damage Amplification
-			elseif spellname == "R" then addmg = math.max(50*Rlvl+70+.75*(GetBonusDmg(Source)+GetBaseDamage(Source)),(50*Rlvl+70+.75*(GetBonusDmg(Source)+GetBaseDamage(Source)))*2*stagedmg3) --x2 if the target is hit twice. stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Taric" then
-			if spellname == "P" then apdmg = .2*GetArmor(Source)  --(bonus)
-			elseif spellname == "W" then apdmg = 40*Wlvl+.2*GetArmor(Source)
-			elseif spellname == "E" then apdmg = math.max(30*Elvl+10+.2*GetBonusAP(Source),(30*Elvl+10+.2*GetBonusAP(Source))*2*stagedmg3) --min (lower damage the farther the target is) up to 200%. stage3: Max damage
-			elseif spellname == "R" then apdmg = 100*Rlvl+50+.5*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Teemo" then
-			if spellname == "Q" then apdmg = 45*Qlvl+35+.8*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = math.max((10*Elvl+.3*GetBonusAP(Source))*stagedmg1,(6*Elvl+.1*GetBonusAP(Source))*stagedmg2,(34*Elvl+.7*GetBonusAP(Source))*stagedmg3) --stage1:Hit (bonus). stage2:poison xsec (4 sec). stage3:Hit+poison for 4 sec
-			elseif spellname == "R" then apdmg = 125*Rlvl+75+.5*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Thresh" then
-			if spellname == "Q" then apdmg = 40*Qlvl+40+.5*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = math.max((40*Elvl+25+.4*GetBonusAP(Source))*(stagedmg1+stagedmg3),((.3*Qlvl+.5)*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg2) --stage1:Active. stage2:Passive (+ Souls). stage3:stage1
-			elseif spellname == "R" then apdmg = 150*Rlvl+100+GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Tristana" then
-			if spellname == "W" then apdmg = 25*Wlvl+55+.5*GetBonusAP(Source), (25*Wlvl+55+.5*GetBonusAP(Source))*2 --max damage, jumping onto max stack explosive charge
-			elseif spellname == "E" then addmg = 10*Elvl+50+(.15*Elvl+.35)*(GetBonusDmg(Source)+GetBaseDamage(Source))+.5*GetBonusAP(Source),(10*Elvl+50+(.15*Elvl+.35)*(GetBonusDmg(Source)+GetBaseDamage(Source))+.5*GetBonusAP(Source))*2.2*stagedmg3	--stage3: Max damage/4 auto attack stacks
-			elseif spellname == "R" then apdmg = 100*Rlvl+200+GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Trundle" then
-			if spellname == "Q" then addmg = 20*Qlvl+(5*Qlvl+95)*(GetBonusDmg(Source)+GetBaseDamage(Source))/100  --(bonus)
-			elseif spellname == "R" then apdmg = (2*Rlvl+18+.02*GetBonusAP(Source))*GetMaxHP(target)/100 --over 4 sec
-			end
-		elseif GetObjectName(Source) == "Tryndamere" then
-			if spellname == "E" then addmg = 30*Elvl+40+GetBonusAP(Source)+1.2*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			end
-		elseif GetObjectName(Source) == "TwistedFate" then
-			if spellname == "Q" then apdmg = 50*Qlvl+10+.65*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = math.max((7.5*Wlvl+7.5+.5*GetBonusAP(Source)+(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg1,(15*Wlvl+15+.5*GetBonusAP(Source)+(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg2,(20*Wlvl+20+.5*GetBonusAP(Source)+(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg3) --stage1:Gold Card.  stage2:Red Card.  stage3:Blue Card
-			elseif spellname == "E" then apdmg = 25*Elvl+30+.5*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Twitch" then
-			if spellname == "P" then dmg = math.floor((GetLevel(Source)+3)/4 + 1) --xstack xsec (6 stack 6 sec)
-			elseif spellname == "E" then addmg = math.max((5*Elvl+10+.2*GetBonusAP(Source)+.25*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg1,(15*Elvl+5)*stagedmg2,((5*Elvl+10+.2*GetBonusAP(Source)+.25*(GetBonusDmg(Source)+GetBaseDamage(Source)))*6+15*Elvl+5)*stagedmg3) --stage1:xstack (6 stack). stage2:Base. stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Udyr" then
-			if spellname == "Q" then addmg = math.max((50*Qlvl-20+(.1*Qlvl+1.1)*(GetBonusDmg(Source)+GetBaseDamage(Source)))*(stagedmg2+stagedmg3),(.15*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg1)  --stage1:persistent effect. stage2:(bonus). stage3:stage2
-			elseif spellname == "W" then 
-			elseif spellname == "E" then 
-			elseif spellname == "R" then apdmg = math.max((40*Rlvl+.45*GetBonusAP(Source))*stagedmg2,(10*Rlvl+5+.25*GetBonusAP(Source))*stagedmg3)  --stage1:0. stage2:xThird Attack. stage3:x wave (5 waves)
-			end
-		elseif GetObjectName(Source) == "Urgot" then
-			if spellname == "Q" then addmg = 30*Qlvl-20+.85*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "E" then addmg = 55*Elvl+20+.6*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			end
-		elseif GetObjectName(Source) == "Varus" then
-			if spellname == "Q" then addmg = math.max(.625*(55*Qlvl-40+1.6*(GetBonusDmg(Source)+GetBaseDamage(Source))),(55*Qlvl-40+1.6*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg3) --stage1:min. stage3:max. reduced by 15% per enemy hit (minimum 33%)
-			elseif spellname == "W" then apdmg = math.max((4*Wlvl+6+.25*GetBonusAP(Source))*stagedmg1,((.0075*Wlvl+.0125+.02*GetBonusAP(Source))*GetMaxHP(target)/100)*stagedmg2,((.0075*Wlvl+.0125+.02*GetBonusAP(Source))*GetMaxHP(target)/100)*3*stagedmg3) --stage1:xhit. stage2:xstack (3 stacks). stage3: 3 stacks
-			elseif spellname == "E" then addmg = 35*Elvl+30+.6*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "R" then apdmg = 100*Rlvl+50+GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Vayne" then
-			if spellname == "Q" then addmg = (.05*Qlvl+.25)*(GetBonusDmg(Source)+GetBaseDamage(Source))  --(bonus)
-			elseif spellname == "W" then dmg = 10*Wlvl+10+((1*Wlvl+3)*GetMaxHP(target)/100)
-			elseif spellname == "E" then addmg = math.max(35*Elvl+10+.5*(GetBonusDmg(Source)+GetBaseDamage(Source)),(35*Elvl+10+.5*(GetBonusDmg(Source)+GetBaseDamage(Source)))*2*stagedmg3) --x2 If they collide with terrain. stage3: Max damage
-			elseif spellname == "R" then 
-			end
-		elseif GetObjectName(Source) == "Veigar" then
-			if spellname == "Q" then apdmg = 45*Qlvl+35+.6*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 50*Wlvl+70+GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 125*Rlvl+125+GetBonusAP(Source)+GetBonusAP(myHero)+.8*GetBonusAP(target)
-			end
-		elseif GetObjectName(Source) == "Velkoz" then
-			if spellname == "P" then dmg = 10*GetLevel(Source)+25
-			elseif spellname == "Q" then apdmg = 40*Qlvl+40+.6*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = math.max(20*Wlvl+10+.25*GetBonusAP(Source),(20*Wlvl+10+.25*GetBonusAP(Source))*1.5*stagedmg2) --stage1-3:Initial. stage2:Detonation.
-			elseif spellname == "E" then apdmg = 30*Elvl+40+.5*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 20*Rlvl+30+.6*GetBonusAP(Source) --every 0.25 sec (2.5 sec), Organic Deconstruction every 0.5 sec
-			end
-		elseif GetObjectName(Source) == "Vi" then
-			if spellname == "Q" then addmg = math.max(25*Qlvl+25+.8*(GetBonusDmg(Source)+GetBaseDamage(Source)),(25*Qlvl+25+.8*(GetBonusDmg(Source)+GetBaseDamage(Source)))*2*stagedmg3) --x2 If charging up to 1.5 seconds. stage3: Max damage
-			elseif spellname == "W" then addmg = ((3/2)*Wlvl+5/2+(1/35)*(GetBonusDmg(Source)+GetBaseDamage(Source)))*GetCurrentHP(target)/100
-			elseif spellname == "E" then addmg = 15*Elvl-10+.15*(GetBonusDmg(Source)+GetBaseDamage(Source))+.7*GetBonusAP(Source)  --(Bonus)
-			elseif spellname == "R" then addmg = 150*Rlvl+1.4*(GetBonusDmg(Source)+GetBaseDamage(Source)) --deals 75% damage to enemies in her way
-			end
-		elseif GetObjectName(Source) == "Viktor" then
-			if spellname == "Q" then apdmg = math.max((20*Qlvl+20+.2*GetBonusAP(Source))*(stagedmg1+stagedmg3),(math.max(5*GetLevel(Source)+15,10*GetLevel(Source)-30,20*GetLevel(Source)-150)+.5*GetBonusAP(Source)+(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg2) --stage1-3:Initial. stage2:basic attack.
-			elseif spellname == "E" then apdmg = math.max(45*Elvl+25+.7*GetBonusAP(Source),(45*Elvl+25+.7*GetBonusAP(Source))*1.4*stagedmg3) --Initial or Aftershock. stage3: Max damage
-			elseif spellname == "R" then apdmg = math.max((100*Rlvl+50+.55*GetBonusAP(Source))*stagedmg1,(15*Rlvl+.1*GetBonusAP(Source))*stagedmg2,(100*Rlvl+50+.55*GetBonusAP(Source)+(15*Rlvl+.1*GetBonusAP(Source))*7)*stagedmg3) --stage1:initial. stage2: xsec (7 sec). stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Vladimir" then
-			if spellname == "Q" then apdmg = 35*Qlvl+55+.6*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 55*Wlvl+25+(GetMaxHP(Source)-(400+85*GetLevel(Source)))*.15 --(2 sec)
-			elseif spellname == "E" then apdmg = math.max((25*Elvl+35+.45*GetBonusAP(Source))*stagedmg1,((25*Elvl+35)*0.25)*stagedmg2,((25*Elvl+35)*2+.45*GetBonusAP(Source))*stagedmg3) --stage1:25% more base damage x stack. stage2:+x stack. stage3: Max damage
-			elseif spellname == "R" then apdmg = 100*Rlvl+50+.7*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Volibear" then
-			if spellname == "Q" then addmg = 30*Qlvl  --(bonus)
-			elseif spellname == "W" then addmg = ((Wlvl-1)*45+80+(GetMaxHP(Source)-(440+GetLevel(Source)*86))*.15)*(1+(GetMaxHP(target)-GetCurrentHP(target))/GetMaxHP(target))
-			elseif spellname == "E" then apdmg = 45*Elvl+15+.6*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 80*Rlvl-5+.3*GetBonusAP(Source)  --xhit
-			end
-		elseif GetObjectName(Source) == "Warwick" then
-			if spellname == "P" then apdmg = math.max(.5*GetLevel(Source)+2.5,(.5*GetLevel(Source)+2.5)*3*stagedmg3) --xstack (3 stacks). stage3: Max damage
-			elseif spellname == "Q" then apdmg = 50*Qlvl+25+GetBonusAP(Source)+((2*Qlvl+6)*GetMaxHP(target)/100)
-			elseif spellname == "R" then apdmg = math.max((100*Rlvl+50+2*(GetBonusDmg(Source)+GetBaseDamage(Source)))/5,(100*Rlvl+50+2*(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg3) --xstrike (5 strikes) , without counting on-hit effects. stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "MonkeyKing" then
-			if spellname == "Q" then addmg = 30*Qlvl+.1*(GetBonusDmg(Source)+GetBaseDamage(Source))  --(bonus)
-			elseif spellname == "W" then apdmg = 45*Wlvl+25+.6*GetBonusAP(Source)
-			elseif spellname == "E" then addmg = 45*Elvl+15+.8*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "R" then addmg = math.max(90*Rlvl-70+1.1*(GetBonusDmg(Source)+GetBaseDamage(Source)),(90*Rlvl-70+1.1*(GetBonusDmg(Source)+GetBaseDamage(Source)))*4*stagedmg3) --xsec (4 sec). stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Xerath" then
-			if spellname == "Q" then apdmg = 40*Qlvl+40+.75*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = math.max((30*Qlvl+30+.6*GetBonusAP(Source))*1.5*(stagedmg1+stagedmg3),(30*Qlvl+30+.6*GetBonusAP(Source))*stagedmg2) --stage1,3: Center. stage2: Border
-			elseif spellname == "E" then apdmg = 30*Elvl+50+.45*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 55*Rlvl+135+.43*GetBonusAP(Source) --xcast (3 cast)
-			end
-		elseif GetObjectName(Source) == "XinZhao" then
-			if spellname == "Q" then addmg = 15*Qlvl+.2*(GetBonusDmg(Source)+GetBaseDamage(Source))  --(bonus x hit)
-			elseif spellname == "E" then apdmg = 40*Elvl+30+.6*GetBonusAP(Source)
-			elseif spellname == "R" then addmg = 100*Rlvl-25+(GetBonusDmg(Source)+GetBaseDamage(Source))+15*GetCurrentHP(target)/100
-			end
-		elseif GetObjectName(Source) == "Yasuo" then
-			if spellname == "Q" then addmg = 20*Qlvl  -- can critically strike, dealing X% ad
-			elseif spellname == "E" then apdmg = 20*Elvl+50+.6*GetBonusAP(Source) --Each cast increases the next dash's base damage by 25%, up to 50% bonus damage
-			elseif spellname == "R" then addmg = 100*Rlvl+100+1.5*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			end
-		elseif GetObjectName(Source) == "Yorick" then
-			if spellname == "P" then addmg = .35*(GetBonusDmg(Source)+GetBaseDamage(Source)) --xhit of ghouls
-			elseif spellname == "Q" then addmg = 30*Qlvl+.2*(GetBonusDmg(Source)+GetBaseDamage(Source))  --(bonus)
-			elseif spellname == "W" then apdmg = 35*Wlvl+25+GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 30*Elvl+25+(GetBonusDmg(Source)+GetBaseDamage(Source))
-			end
-		elseif GetObjectName(Source) == "Zac" then
-			if spellname == "Q" then apdmg = 40*Qlvl+30+.5*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 15*Wlvl+25+((1*Wlvl+3+.02*GetBonusAP(Source))*GetMaxHP(target)/100)
-			elseif spellname == "E" then apdmg = 50*Elvl+30+.7*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = math.max(70*Rlvl+70+.4*GetBonusAP(Source),(70*Rlvl+70+.4*GetBonusAP(Source))*2.5*stagedmg3) -- stage1:Enemies hit more than once take half damage. stage3: Max damage
-			end
-		elseif GetObjectName(Source) == "Zed" then
-			if spellname == "P" then apdmg = (6+2*(math.floor((GetLevel(Source)-1)/6)))*GetMaxHP(target)/100 
-			elseif spellname == "Q" then addmg = math.max((40*Qlvl+35+(GetBonusDmg(Source)+GetBaseDamage(Source)))*stagedmg1,(40*Qlvl+35+(GetBonusDmg(Source)+GetBaseDamage(Source)))*.6*stagedmg2,(40*Qlvl+35+(GetBonusDmg(Source)+GetBaseDamage(Source)))*1.5*stagedmg3)  --stage1:multiple shurikens deal 50% damage. stage2:Secondary targets. stage3: Max damage
-			elseif spellname == "E" then addmg = 30*Elvl+30+.8*(GetBonusDmg(Source)+GetBaseDamage(Source))
-			elseif spellname == "R" then addmg = (GetBonusDmg(Source)+GetBaseDamage(Source))*(stagedmg1+stagedmg3) dmg =(15*Rlvl+5)*stagedmg2 --stage1-3:100% of Zed attack damage. stage2:% of damage dealt.
-			end
-		elseif GetObjectName(Source) == "Ziggs" then
-			if spellname == "P" then apdmg = math.max(4*GetLevel(Source)+16,8*GetLevel(Source)-8,12*GetLevel(Source)-56)+(.2+.05*math.floor((GetLevel(Source)+5)/6))*GetBonusAP(Source) 
-			elseif spellname == "Q" then apdmg = 45*Qlvl+30+.65*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 35*Wlvl+35+.35*GetBonusAP(Source)
-			elseif spellname == "E" then apdmg = 25*Elvl+15+.3*GetBonusAP(Source) --xmine , 40% damage from additional mines
-			elseif spellname == "R" then apdmg = 125*Rlvl+125+.9*GetBonusAP(Source) --enemies away from the primGetArmor(Source)y blast zone will take 80% damage
-			end
-		elseif GetObjectName(Source) == "Zilean" then
-			if spellname == "Q" then apdmg = 40*Qlvl+35+.9*GetBonusAP(Source)
-			end
-		elseif GetObjectName(Source) == "Zyra" then
-			if spellname == "P" then dmg = 80+20*GetLevel(Source)
-			elseif spellname == "Q" then apdmg = 35*Qlvl+35+.65*GetBonusAP(Source)
-			elseif spellname == "W" then apdmg = 23+6.5*GetLevel(Source)+.2*GetBonusAP(Source) --xstrike Extra plants striking the same target deal 50% less damage
-			elseif spellname == "E" then apdmg = 35*Elvl+25+.5*GetBonusAP(Source)
-			elseif spellname == "R" then apdmg = 85*Rlvl+95+.7*GetBonusAP(Source)
-			end
-        end
-	elseif (spellname == "AD") then
-            addmg = GetBaseDamage(myHero)+GetBonusDmg(myHero)
-    elseif (spellname == "IGNITE") then
-            dmg = 50+20*GetLevel(myHero)
-    elseif (spellname == "SMITESS") then
-            dmg = 54+6*GetLevel(myHero)
-    elseif (spellname == "SMITESB") then
-            dmg = 20+8*GetLevel(myHero)
-    elseif (spellname == "SHEEN") then
-            TrueDmg = GetBaseDamage(myHero)
-    elseif (spellname == "TRINITY") then
-            TrueDmg = 2*GetBaseDamage(myHero)
-    elseif (spellname == "LICHBANE") then
-            apdmg = 0.75*(GetBaseDamage(myHero))+.5*GetBonusAP(myHero)
-    elseif (spellname == "ICEBORN") then
-            addmg = 1.25*GetBaseDamage(myHero) 
-    elseif (spellname == "MURAMANA") then
-            addmg = .06*GetCurrentMana(myHero)
-    elseif (spellname == "HURRICANE") then
-            addmg = 10+.5*GetBaseDamage(myHero)
-    elseif (spellname == "LUDENS") then
-    		apdmg = Ludens()
-    elseif (spellname == "HEXTECH") then
-    		apdmg = 150 + .4 * GetBonusAP(myHero)
-    elseif (spellname == "BILGEWATER") then
-    		apdmg = 100
-    else
-           PrintChat("Error spellDmg "..GetObjectName(Source).." "..spellname)
-            TrueDmg = 0
-    end
+  ["Ahri"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({40, 65, 90, 115, 140})[level] + 0.35 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 2, DamageType = 3, Damage = function(source, target, level) return ({40, 65, 90, 115, 140})[level] + 0.35 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({40, 65, 90, 115, 140})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "W", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({12, 19.5, 27, 34.5, 42})[level] + 0.12 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 95, 130, 165, 200})[level] + 0.50 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({70, 110, 150})[level] + 0.3 * GetBonusAP(source) end},
+  },
 
-    if apdmg > 0 then 
-		apdmg = CalcDamage(Source, target, 0, apdmg) 
-	end
-	if addmg > 0 then 
-		addmg = CalcDamage(Source, target, addmg) 
-	end
+  ["Akali"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({35, 55, 75, 95, 115})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({45, 70, 95, 120, 145})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({30, 55, 80, 105, 130})[level] + 0.4 * GetBonusAP(source) + 0.6 * source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({100, 175, 250})[level] + 0.5 * GetBonusAP(source) end},
+  },
 
-    TrueDmg = apdmg+addmg+dmg
+  ["Alistar"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({60, 105, 150, 195, 240})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({55, 110, 165, 220, 275})[level] + 0.7 * GetBonusAP(source) end},
+  },
 
-    return TrueDmg
-end
+  ["Amumu"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 130, 180, 230, 280})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({8, 12, 16, 20, 24})[level] + (({0.01, 0.015, 0.02, 0.025, 0.03})[level] + 0.01 * GetBonusAP(source) / 100) * GetMaxHP(target) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({75, 100, 125, 150, 175})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.8 * GetBonusAP(source) end},
+  },
 
-OnUpdateBuff(function(unit,buff)
-  if unit == myHero and buff.Name == "itemmagicshankcharge" then 
-  LudensStacks = buff.Count
-  end
-end)
+  ["Anivia"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] * 2 + GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return (({55, 85, 115, 145, 175})[level] + 0.5 * GetBonusAP(source)) * (GotBuff(target, "chilled") and 2 or 1) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160})[level] + 0.25 * GetBonusAP(source) end},
+  },
 
-OnRemoveBuff(function(unit,buff)
-  if unit == myHero and buff.Name == "itemmagicshankcharge" then 
-  LudensStacks = 0
-  end
-end)
+  ["Annie"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 115, 150, 185, 220})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.85 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({210, 335, 460})[level] + GetBonusAP(source) end},
+  },
 
-function Ludens()
-    return LudensStacks == 100 and 100+0.1*GetBonusAP(myHero) or 0
+  ["Ashe"] = {
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return ({20, 35, 50, 65, 80})[level] + source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({250, 425, 600})[level] + GetBonusAP(source) end},
+    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return (({250, 425, 600})[level] + GetBonusAP(source)) / 2 end},
+  },
+
+  ["Azir"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({65, 85, 105, 125, 145})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({55, 60, 75, 80, 90})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 225, 300})[level] + 0.6 * GetBonusAP(source) end},
+  },
+
+  ["Blitzcrank"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 135, 190, 245, 300})[level] + GetBonusAP(source) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({250, 375, 500})[level] + GetBonusAP(source) end},
+  },
+
+  ["Bard"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 125, 170, 215, 260})[level] + 0.65 * GetBonusAP(source) end},
+  },
+
+  ["Brand"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.65 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({75, 120, 165, 210, 255})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 105, 140, 175, 210})[level] + 0.55 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.5 * GetBonusAP(source) end},
+  },
+
+  ["Braum"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.025 * GetMaxHP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.6 * GetBonusAP(source) end},
+  },
+
+  ["Caitlyn"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({30, 70, 110, 150, 190})[level] + ({1.3, 1.4, 1.5, 1.6, 1.7})[level] * source.totalDamage end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({250, 475, 700})[level] + 2 * source.totalDamage end},
+  },
+
+  ["Cassiopeia"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({75, 115, 155, 195, 235})[level] + 0.45 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({10, 15, 20, 25, 30})[level] + 0.1 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({55, 80, 105, 130, 155})[level] + 0.55 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.5 * GetBonusAP(source) end},
+  },
+
+  ["ChoGath"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 135, 190, 245, 305})[level] + GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({75, 125, 175, 225, 275})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({20, 35, 50, 65, 80})[level] + 0.3 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 3, Damage = function(source, target, level) return ({300, 475, 650})[level] + 0.7 * GetBonusAP(source) end},
+  },
+
+  ["Corki"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 150, 205, 250})[level] + 0.5 * GetBonusAP(source) + 0.5 * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Stage = 2, Damage = function(source, target, level) return ({30, 45, 60, 75, 90})[level] + (1.5 * source.totalDamage) + 0.2 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({20, 32, 44, 56, 68})[level] + 0.4 * source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({100, 130, 160})[level] + 0.3 * GetBonusAP(source) + ({20, 50, 80})[level] / 100 * source.totalDamage end},
+    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({150, 195, 240})[level] + 0.45 * GetBonusAP(source) + ({30, 75, 120})[level] / 100 * source.totalDamage end},
+  },
+
+  ["Darius"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({40, 70, 100, 130, 160})[level] + (({0.5, 1.1, 1.2, 1.3, 1.4})[level] * source.totalDamage) end},
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return source.totalDamage + (0.4 * source.totalDamage) end},
+    {Slot = "R", DamageType = 3, Damage = function(source, target, level) return ({100, 200, 300})[level] + 0.75 * source.totalDamage end},
+  },
+
+  ["Diana"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 95, 130, 165, 200})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({22, 34, 46, 58, 70})[level] + 0.2 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({100, 160, 220})[level] + 0.6 * GetBonusAP(source) end},
+  },
+
+  ["DrMundo"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) if GetObjectType(target) == Obj_AI_Minion then return math.min(({300, 350, 400, 450, 500})[level],math.max(({80, 130, 180, 230, 280})[level], ({15, 17.5, 20, 22.5, 25})[level] / 100 * GetCurrentHP(target))) end; return math.max(({80, 130, 180, 230, 280})[level],({15, 17.5, 20, 22.5, 25})[level] / 100 * GetCurrentHP(target)) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({35, 50, 65, 80, 95})[level] + 0.2 * GetBonusAP(source) end}
+  },
+
+  ["Draven"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({45, 55, 65, 75, 85})[level] / 100 * source.totalDamage end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({70, 105, 140, 175, 210})[level] + 0.5 * source.totalDamage end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({175, 275, 375})[level] + 1.1 * source.totalDamage end},
+  },
+
+  ["Ekko"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 75, 90, 105, 120})[level] + 0.1 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({60, 85, 110, 135, 160})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({150, 195, 240, 285, 330})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({50, 80, 110, 140, 170})[level] + 0.2 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({200, 350, 500})[level] + 1.3 * GetBonusAP(source) end}
+  },
+
+  ["Elise"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({40, 75, 110, 145, 180})[level] + (0.08 + 0.03 / 100 * GetBonusAP(source)) * GetCurrentHP(target) end},
+    {Slot = "QM", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({60, 100, 140, 180, 220})[level] + (0.08 + 0.03 / 100 * GetBonusAP(source)) * (GetMaxHP(target) - GetCurrentHP(target)) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({75, 125, 175, 225, 275})[level] + 0.8 * GetBonusAP(source) end},
+  },
+
+  ["Evelynn"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({40, 50, 60, 70, 80})[level] + ({35, 40, 45, 50, 55})[level] / 100 * GetBonusAP(source) + ({50, 55, 60, 65, 70})[level] / 100 * source.totalDamage end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + GetBonusAP(source) + source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return (({0.15, 0.20, 0.25})[level] + 0.01 / 100 * GetBonusAP(source)) * GetCurrentHP(target) end},
+  },
+
+  ["Ezreal"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({35, 55, 75, 95, 115})[level] + 0.4 * GetBonusAP(source) + 1.1 * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({75, 125, 175, 225, 275})[level] + 0.75 * GetBonusAP(source) + 0.5 * source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({350, 500, 650})[level] + 0.9 * GetBonusAP(source) + source.totalDamage end},
+  },
+
+  ["Fiddlesticks"] = {
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.45 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({65, 85, 105, 125, 145})[level] + 0.45 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({125, 225, 325})[level] + 0.45 * GetBonusAP(source) end},
+  },
+
+  ["Fiora"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({65, 75, 85, 95, 105})[level] + ({.55, .70, .85, 1, 1.15})[level] * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({90, 130, 170, 210, 250})[level] + GetBonusAP(source) end},
+  },
+
+  ["Fizz"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({10, 25, 40, 55, 70})[level] + 0.35 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({10, 15, 20, 25, 30})[level] + 0.3 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 120, 170, 220, 270})[level] + 0.75 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({200, 325, 450})[level] + GetBonusAP(source) end},
+  },
+
+  ["Galio"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 135, 190, 245, 300})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 105, 150, 195, 240})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({360, 540, 720})[level] + GetBonusAP(source) end},
+  },
+
+  ["GangPlank"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({20, 45, 70, 95, 120})[level] + source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({50, 70, 90})[level] + 0.1 * GetBonusAP(source) end},
+  },
+
+  ["Garen"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({30, 55, 80, 105, 130})[level] + 1.4 * source.totalDamage end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({20, 45, 70, 95, 120})[level] + ({70, 80, 90, 100, 110})[level] / 100 * source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({175, 350, 525})[level] + ({28.57, 33.33, 40})[level] / 100 * (GetMaxHP(target) - GetCurrentHP(target)) end},
+  },
+
+  ["Gnar"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({5, 35, 65, 95, 125})[level] + 1.15 * source.totalDamage end},
+    {Slot = "QM", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({5, 45, 85, 125, 165})[level] + 1.2 * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({10, 20, 30, 40, 50})[level] + GetBonusAP(source) + ({6, 8, 10, 12, 14})[level] / 100 * GetMaxHP(target) end},
+    {Slot = "WM", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({25, 45, 65, 85, 105})[level] + source.totalDamage end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({20, 60, 100, 140, 180})[level] + GetMaxHP(source) * 0.06 end},
+    {Slot = "EM", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({20, 60, 100, 140, 180})[level] + GetMaxHP(source) * 0.06 end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({200, 300, 400})[level] + 0.5 * GetBonusAP(source) + 0.2 * source.totalDamage end},
+  },
+
+  ["Gragas"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({20, 50, 80, 110, 140})[level] + 8 / 100 * GetMaxHP(target) + 0.3 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 130, 180, 230, 280})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({200, 300, 400})[level] + 0.7 * GetBonusAP(source) end},
+  },
+
+  ["Graves"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({55, 70, 85, 100, 115})[level] + 0.75 * source.totalDamage end},
+    {Slot = "Q", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({80, 125, 170, 215, 260})[level] + ({0.4, 0.6, 0.8, 1, 1.2})[level] * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210, 260})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({250, 400, 550})[level] + 1.5 * source.totalDamage end},
+  },
+
+  ["Hecarim"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({60, 95, 130, 165, 200})[level] + 0.6 * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({20, 30, 40, 50, 60})[level] + 0.2 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({40, 75, 110, 145, 180})[level] + 0.5 * source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + GetBonusAP(source) end},
+  },
+
+  ["Heimerdinger"] = {
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.45 * GetBonusAP(source) end},
+    {Slot = "W", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({135, 180, 225})[GetCastLevel(source, _R)] + 0.45 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 100, 140, 180, 220})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({150, 200, 250})[GetCastLevel(source, _R)] + 0.6 * GetBonusAP(source) end},
+  },
+
+  ["Irelia"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({20, 50, 80, 110, 140})[level] + 1.2 * source.totalDamage end},
+    {Slot = "W", DamageType = 3, Damage = function(source, target, level) return ({15, 30, 45, 60, 75})[level] end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({80, 120, 160})[level] + 0.5 * GetBonusAP(source) + 0.6 * source.totalDamage end},
+  },
+
+  ["Janna"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 85, 110, 135, 160})[level] + 0.35 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({60, 115, 170, 225, 280})[level] + 0.5 * GetBonusAP(source) end},
+  },
+
+  ["JarvanIV"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 1.2 * source.totalDamage end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 105, 150, 195, 240})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({200, 325, 450})[level] + 1.5 * source.totalDamage end},
+  },
+
+  ["Jax"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + source.totalDamage + 0.6 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({40, 75, 110, 145, 180})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({50, 75, 100, 125, 150})[level] + 0.5 * source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({100, 160, 220})[level] + 0.7 * GetBonusAP(source) end},
+  },
+
+  ["Jayce"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({70, 120, 170, 220, 270, 320})[level] + 1.2 * source.totalDamage end},
+    {Slot = "QM", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({30, 70, 110, 150, 190, 230})[level] + source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({25, 40, 55, 70, 85, 100})[level] + 0.25 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return (({8, 10.4, 12.8, 15.2, 17.6, 20})[level] / 100) * GetMaxHP(target) + source.totalDamage end},
+  },
+
+  ["Jhin"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({50, 75, 100, 125, 150})[level] + ({0.3, 0.35, 0.4, 0.45, 0.5})[level] * source.totalDamage + 0.6 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return ({50, 85, 120, 155, 190})[level] + 0.7 * source.totalDamage end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({20, 80, 140, 200, 260})[level] + 1.20 * source.totalDamage + GetBonusAP(source) end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({50, 125, 200})[level] + 0.25 * source.totalDamage * (1 + (100 - GetPercentHP(target)) * 1.02) end},
+    {Slot = "R", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({50, 125, 200})[level] + 0.25 * source.totalDamage * (1 + (100 - GetPercentHP(target)) * 1.02) * 2 + 0.01 * GetCritChance(source) end},
+  },
+
+  ["Jinx"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return 0.1 * source.totalDamage end},
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return ({10, 60, 110, 160, 210})[level] + 1.4 * source.totalDamage end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 135, 190, 245, 300})[level] + GetBonusAP(source) end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({25, 35, 45})[level] + ({25, 30, 35})[level] / 100 * (GetMaxHP(target) - GetCurrentHP(target)) + 0.1 * source.totalDamage end},
+    {Slot = "R", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({250, 350, 450})[level] + ({25, 30, 35})[level] / 100 * (GetMaxHP(target) - GetCurrentHP(target)) + source.totalDamage end},
+  },
+
+  ["Karma"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 125, 170, 215, 260})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({80, 125, 170, 215, 260})[level] + ({25, 75, 125, 175})[GetCastLevel(source, _R)] + 0.9 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210, 260})[level] + 0.9 * GetBonusAP(source) end},
+    {Slot = "W", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210, 260})[level] + 0.9 * GetBonusAP(source) end},
+  },
+
+  ["Karthus"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return (({40, 60, 80, 100, 120})[level] + 0.3 * GetBonusAP(source)) * 2 end},
+    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({40, 60, 80, 100, 120})[level] + 0.3 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({30, 50, 70, 90, 110})[level] + 0.2 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({250, 400, 550})[level] + 0.6 * GetBonusAP(source) end},
+  },
+
+  ["Kassadin"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({70, 95, 120, 145, 170})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({40, 65, 90, 115, 140})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "W", Stage = 2, DamageType = 2, Damage = function(source, target, level) return 20 + 0.1 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 105, 130, 155, 180})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({80, 100, 120})[level] + 0.02 * GetMaxMana(source) end},
+    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({40, 50, 60})[level] + 0.01 * GetMaxMana(source) end},
+  },
+
+  ["Katarina"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 85, 110, 135, 160})[level] + 0.45 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({15, 30, 45, 60, 75})[level] + 0.15 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({40, 75, 110, 145, 180})[level] + 0.6 * source.totalDamage + 0.25 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({40, 70, 100, 130, 160})[level] + 0.25 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return (({350, 550, 750})[level] + 3.75 * source.totalDamage + 2.5 * GetBonusAP(source)) / 10 end},
+    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({350, 550, 750})[level] + 3.75 * source.totalDamage + 2.5 * GetBonusAP(source) end},
+  },
+
+  ["Kayle"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210, 260})[level] + source.totalDamage + 0.6 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({20, 30, 40, 50, 60})[level] + 0.25 * GetBonusAP(source) end},
+  },
+
+  ["Kennen"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({75, 115, 155, 195, 235})[level] + 0.75 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({40, 50, 60, 70, 80})[level] / 100 * source.totalDamage end},
+    {Slot = "W", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({65, 95, 125, 155, 185})[level] + 0.55 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({85, 125, 165, 205, 245})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({80, 145, 210})[level] + 0.4 * GetBonusAP(source) end},
+  },
+
+  ["KhaZix"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({70, 95, 120, 145, 170})[level] + 1.2 * source.totalDamage end},
+    {Slot = "Q", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({91, 123.5, 156, 188.5, 221})[level] + 1.56 * source.totalDamage end},
+    {Slot = "Q", Stage = 3, DamageType = 1, Damage = function(source, target, level) return ({70, 95, 120, 145, 170})[level] + 2.24 * source.totalDamage + 10 * GetLevel(source) end},
+    {Slot = "Q", Stage = 4, DamageType = 1, Damage = function(source, target, level) return ({91, 123.5, 156, 188.5, 221})[level] + 2.6 * source.totalDamage + 10 * GetLevel(source) end},
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return ({80, 110, 140, 170, 200})[level] + source.totalDamage end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({65, 100, 135, 170, 205})[level] + 0.2 * source.totalDamage end},
+  },
+
+  ["KogMaw"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 130, 180, 230, 280})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) local dmg = (0.02 + (0.01*(GetBonusAP(source)) * 0.75)) * GetMaxHP(target) ; if GetObjectType(target) == Obj_AI_Minion and dmg > 100 then dmg = 100 end ; return dmg end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210, 260})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return (({70, 110, 150})[level] + 0.65 * source.totalDamage + 0.25 * GetBonusAP(source)) * (GetPercentHP(target) < 25 and 3 or (GetPercentHP(target) < 50 and 2 or 1)) end},
+  },
+
+  ["Kalista"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({10, 70, 130, 190, 250})[level] + source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return (({12, 14, 16, 18, 20})[level] / 100) * GetMaxHP(target) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) local count = GotBuff(target, "kalistaexpungemarker") if count > 0 then return (({20, 30, 40, 50, 60})[level] + 0.6* (source.totalDamage)) + ((count - 1)*(({10, 14, 19, 25, 32})[level]+({0.2, 0.225, 0.25, 0.275, 0.3})[level] * (source.totalDamage))) end; return 0 end},
+  },
+
+  ["Kindred"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + source.totalDamage * 0.2 end},
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return ({25, 30, 35, 40, 45})[level] + source.totalDamage * 0.4 end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({80, 110, 140, 170, 200})[level] + source.totalDamage * 0.2 + GetMaxHP(target) * 0.05 end},
+  },
+
+  ["LeBlanc"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({55, 80, 105, 130, 155})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({55, 80, 105, 130, 155})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({85, 125, 165, 205, 245})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({40, 65, 90, 115, 140})[level] + 0.5 * GetBonusAP(source) end},
+  },
+
+  ["LeeSin"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({50, 80, 110, 140, 170})[level] + 0.9 * source.totalDamage end},
+    {Slot = "Q", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({50, 80, 110, 140, 170})[level] + 0.9 * source.totalDamage + 0.08 * (GetMaxHP(target) - GetCurrentHP(target)) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 95, 130, 165, 200})[level] + source.totalDamage end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({200, 400, 600})[level] + 2 * source.totalDamage end},
+  },
+
+  ["Leona"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({40, 70, 100, 130, 160})[level] + 0.3 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210, 260})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 100, 140, 180, 220})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.8 * GetBonusAP(source) end},
+  },
+
+  ["Lissandra"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({70, 100, 130, 160, 190})[level] + 0.65 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.7 * GetBonusAP(source) end},
+  },
+
+  ["Lucian"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({80, 110, 140, 170, 200})[level] + ({60, 75, 90, 105, 120})[level] / 100 * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({60, 100, 140, 180, 220})[level] + 0.9 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({40, 50, 60})[level] + 0.1 * GetBonusAP(source) + 0.25 * source.totalDamage end},
+  },
+
+  ["Lulu"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 125, 170, 215, 260})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 110, 140, 170, 200})[level] + 0.4 * GetBonusAP(source) end},
+  },
+
+  ["Lux"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210, 260})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 105, 150, 195, 240})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({300, 400, 500})[level] + 0.75 * GetBonusAP(source) end},
+  },
+
+  ["Malphite"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({70, 120, 170, 220, 270})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return ({30, 38, 46, 54, 62})[level] / 100 * source.totalDamage end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 100, 140, 180, 220})[level] + 0.3 * GetArmor(source) + 0.2 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({200, 300, 400})[level] + GetBonusAP(source) end},
+  },
+
+  ["Malzahar"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 135, 190, 245, 300})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return (({4, 4.5, 5, 5.5, 6})[level] / 100 + 0.01 / 100 * GetBonusAP(source)) * GetMaxHP(target) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 140, 200, 260, 320})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({250, 400, 550})[level] + 1.3 * GetBonusAP(source) end},
+  },
+
+  ["Maokai"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return (({9, 10, 11, 12, 13})[level] / 100 + 0.03 / 100 * GetBonusAP(source)) * GetMaxHP(target) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({40, 60, 80, 100, 120})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({100, 150, 200})[level] + 0.5 * GetBonusAP(source) end},
+  },
+
+  ["MasterYi"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({25, 60, 95, 130, 165})[level] + source.totalDamage + 0.6 * source.totalDamage end},
+    {Slot = "E", DamageType = 3, Damage = function(source, target, level) return ({10, 12.5, 15, 17.5, 20})[level] / 100 * source.totalDamage + ({10, 15, 20, 25, 30})[level] end},
+  },
+
+  ["MissFortune"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({20, 35, 50, 65, 80})[level] + 0.35 * GetBonusAP(source) + 0.85 * source.totalDamage end},
+    {Slot = "Q", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({40, 70, 100, 130, 160})[level] + 0.5 * GetBonusAP(source) + source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return 0.06 * source.totalDamage end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 115, 150, 185, 220})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return 0.75 * source.totalDamage + 0.2 * GetBonusAP(source) end},
+  },
+
+  ["MonkeyKing"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({30, 60, 90, 120, 150})[level] + 0.1 * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({60, 105, 150, 195, 240})[level] + 0.8 * source.totalDamage end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({20, 110, 200})[level] + 1.1 * source.totalDamage end},
+  },
+
+  ["Mordekaiser"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 110, 140, 170, 200})[level] + source.totalDamage + 0.4 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({24, 38, 52, 66, 80})[level] + 0.2 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return (({24, 29, 34})[level] / 100 + 0.04 / 100 * GetBonusAP(source)) * GetMaxHP(target) end},
+  },
+
+  ["Morgana"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 135, 190, 245, 300})[level] + 0.9 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({8, 16, 24, 32, 40})[level] + 0.11 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 225, 300})[level] + 0.7 * GetBonusAP(source) end},
+  },
+
+  ["Nami"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({75, 130, 185, 240, 295})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({25, 40, 55, 70, 85})[level] + 0.2 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.6 * GetBonusAP(source) end},
+  },
+
+  ["Nasus"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return GetBuffData(source, "nasusqstacks").Stacks + ({30, 50, 70, 90, 110})[level] end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({55, 95, 135, 175, 215})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({11, 19, 27, 35, 43})[level] + 0.12 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return (({3, 4, 5})[level] / 100 + 0.01 / 100 * GetBonusAP(source)) * GetMaxHP(target) end},
+  },
+
+  ["Nautilus"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 105, 150, 195, 240})[level] + 0.75 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({30, 40, 50, 60, 70})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 100, 140, 180, 220})[level] + 0.3 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({200, 325, 450})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({125, 175, 225})[level] + 0.4 * GetBonusAP(source) end},
+  },
+
+  ["Nidalee"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 77.5, 95, 112.5, 130})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "QM", Stage = 2, DamageType = 2, Damage = function(source, target, level) local dmg = (({4, 20, 50, 90})[GetCastLevel(source, _R)] + 0.36 * GetBonusAP(source) + 0.75 * source.totalDamage) * ((GetMaxHP(target) - GetCurrentHP(target)) / GetMaxHP(target) * 1.5 + 1) ; dmg = dmg * (GotBuff(target, "nidaleepassivehunted") and 1.33 or 1); return dmg end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({40, 80, 120, 160, 200})[level] + 0.2 * GetBonusAP(source) end},
+    {Slot = "W", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210})[GetCastLevel(source, _R)] + 0.3 * GetBonusAP(source) end},
+    {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({70, 130, 190, 250})[GetCastLevel(source, _R)] + 0.45 * GetBonusAP(source) end},
+  },
+
+  ["Nocturne"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({60, 105, 150, 195, 240})[level] + 0.75 * source.totalDamage end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 260})[level] + GetBonusAP(source) end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({150, 250, 350})[level] + 1.2 * source.totalDamage end},
+  },
+
+  ["Nunu"] = {
+    {Slot = "Q", DamageType = 3, Damage = function(source, target, level) return ({400, 550, 700, 850, 1000})[level] end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({85, 130, 175, 225, 275})[level] + GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({625, 875, 1125})[level] + 2.5 * GetBonusAP(source) end},
+  },
+
+  ["Olaf"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + source.totalDamage end},
+    {Slot = "E", DamageType = 3, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.4 * source.totalDamage end},
+  },
+
+  ["Orianna"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.3 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 225, 300})[level] + 0.7 * GetBonusAP(source) end},
+  },
+
+  ["Pantheon"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return (({65, 105, 145, 185, 225})[level] + 1.4 * source.totalDamage) * ((GetCurrentHP(target) / GetMaxHP(target) < 0.15) and 2 or 1) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({50, 75, 100, 125, 150})[level] + GetBonusAP(source) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return (({13, 23, 33, 43, 53})[level] + 0.6 * source.totalDamage) * ((GetObjectType(target) == Obj_AI_Hero) and 2 or 1) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({400, 700, 1000})[level] + GetBonusAP(source) end},
+    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return (({400, 700, 1000})[level] + GetBonusAP(source)) * 0.5 end},
+  },
+
+  ["Poppy"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({35, 55, 75, 95, 115})[level] + 0.80 * source.totalDamage + 0.07 * GetMaxHP(target) end},
+    {Slot = "Q", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 1.6 * source.totalDamage + 0.14 * GetMaxHP(target) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({50, 70, 90, 110, 130})[level] + 0.5 * source.totalDamage end},
+    {Slot = "E", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({100, 140, 180, 220, 260})[level] + source.totalDamage end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({200, 300, 400})[level] + 0.9 * source.totalDamage end},
+  },
+
+  ["Quinn"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) local damage = (({20, 45, 70, 95, 120})[level] + ({0.8, 0.9, 1.0, 1.1, 1.2})[level] * source.totalDamage) + 0.35 * GetBonusAP(source) ; damage = damage + damage * ((100 - GetPercentHP(target)) / 100) ; return damage end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({40, 70, 100, 130, 160})[level] + 0.2 * source.totalDamage end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return source.totalDamage end},
+  },
+
+  ["Rammus"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({100, 150, 200, 250, 300})[level] + GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({15, 25, 35, 45, 55})[level] + 0.1 * GetArmor(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({65, 130, 195})[level] + 0.3 * GetBonusAP(source) end},
+  },
+
+  ["Renekton"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.8 * source.totalDamage end},
+    {Slot = "Q", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.8 * source.totalDamage * 1.5 end},
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return ({10, 30, 50, 70, 90})[level] + 1.5 * source.totalDamage end},
+    {Slot = "W", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({10, 30, 50, 70, 90})[level] + 1.5 * source.totalDamage * 1.5 end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({30, 60, 90, 120, 150})[level] + 0.9 * source.totalDamage end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({30, 60, 90, 120, 150})[level] + 0.9 * source.totalDamage * 1.5 end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({30, 60, 120})[level] + 0.1 * GetBonusAP(source) end},
+  },
+
+  ["Rengar"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({30, 60, 90, 120, 150})[level] + ({0, 5, 10, 15, 20})[level] / 100 * source.totalDamage end},
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({30, 60, 90, 120, 150})[level] + (({100, 105, 110, 115, 120})[level] / 100 - 1) * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({50, 80, 110, 140, 170})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({50, 100, 150, 200, 250})[level] + 0.7 * source.totalDamage end},
+  },
+
+  ["Riven"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({10, 30, 50, 70, 90})[level] + (source.totalDamage / 100) * ({40, 45, 50, 55, 60})[level] end},
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return ({50, 80, 110, 140, 170})[level] + source.totalDamage end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return (({80, 120, 160})[level] + 0.6 * source.totalDamage) * ((GetMaxHP(target) - GetCurrentHP(target)) / GetMaxHP(target) * 2.67 + 1) end},
+  },
+
+  ["Rumble"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({75, 135, 195, 255, 315})[level] + GetBonusAP(source) end},
+    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({112.5, 202.5, 292.5, 382.5, 472.5})[level] + 1.5 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({45, 70, 95, 120, 145})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({67.5, 105, 142.5, 180, 217.5})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({130, 185, 240})[level] + 0.3 * GetBonusAP(source) end},
+    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({650, 925, 1200})[level] + 1.5 * GetBonusAP(source) end},
+  },
+
+  ["Ryze"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 85, 110, 135, 160})[level] + 0.55 * GetBonusAP(source) + ({2, 2.5, 3, 3.5, 4})[level] / 100 * GetMaxMana(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({80, 100, 120, 140, 160})[level] + 0.4 * GetBonusAP(source) + 0.025 * GetMaxMana(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({36, 52, 68, 84, 100})[level] + 0.2 * GetBonusAP(source) + 0.02 * GetMaxMana(source) end},
+  },
+
+  ["Sejuani"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 125, 170, 215, 260})[level] end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({4, 4.5, 5, 5.5, 6})[level] / 100 * GetMaxHP(target) end},
+    {Slot = "W", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({10, 17.5, 25, 32.5, 40})[level] + (({4, 6, 8, 10, 12})[level] / 100) * GetMaxHP(source) + 0.15 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.8 * GetBonusAP(source) end},
+  },
+
+  ["Shaco"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({140, 160, 180, 200, 220})[level] / 100 * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({35, 50, 65, 80, 95})[level] + 0.2 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({50, 90, 130, 170, 210})[level] + source.totalDamage + GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({300, 450, 600})[level] + GetBonusAP(source) end},
+  },
+
+  ["Shen"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 100, 140, 180, 220})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({50, 85, 120, 155, 190})[level] + 0.5 * GetBonusAP(source) end},
+  },
+
+  ["Shyvana"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({80, 85, 90, 95, 100})[level] / 100 * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({20, 35, 50, 65, 80})[level] + 0.2 * source.totalDamage end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 100, 140, 180, 220})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({175, 300, 425})[level] + 0.7 * GetBonusAP(source) end},
+  },
+
+  ["Singed"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({22, 34, 46, 58, 70})[level] + 0.3 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({50, 65, 80, 95, 110})[level] + 0.75 * GetBonusAP(source) + ({4, 5.5, 7, 8.5, 10})[level] / 100 * GetMaxHP(target) end},
+  },
+
+  ["Sion"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({20, 40, 60, 80, 100})[level] + 0.6 * source.totalDamage end},
+    {Slot = "Q", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({60, 120, 180, 240, 300})[level] + 1.8 * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({40, 65, 90, 115, 140})[level] + 0.4 * GetBonusAP(source) + ({10, 11, 12, 13, 14})[level] / 100 * GetMaxHP(target) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 105, 140, 175, 210})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return (({70, 105, 140, 175, 210})[level] + 0.4 * GetBonusAP(source)) * 1.5 end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({150, 300, 450})[level] + 0.4 * source.totalDamage end},
+    {Slot = "R", Stage = 2, DamageType = 1, Damage = function(source, target, level) return (({150, 300, 450})[level] + 0.4 * source.totalDamage) * 2 end},
+  },
+
+  ["Sivir"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({25, 45, 65, 85, 105})[level] + ({70, 80, 90, 100, 110})[level] / 100 * source.totalDamage + 0.5 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return ({60, 65, 70, 75, 80})[level] / 100 * source.totalDamage end},
+  },
+
+  ["Skarner"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({20, 30, 40, 50, 60})[level] + 0.4 * source.totalDamage end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({40, 75, 110, 145, 180})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return (({20, 60, 100})[level] + 0.5 * GetBonusAP(source)) + (0.60 * source.totalDamage) end},
+  },
+
+  ["Sona"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({40, 80, 120, 160, 200})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.5 * GetBonusAP(source) end},
+  },
+
+  ["Soraka"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 0.35 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 0.4 * GetBonusAP(source) end},
+  },
+
+  ["Swain"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({25, 40, 55, 70, 85})[level] + 0.3 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({75, 115, 155, 195, 235})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({50, 70, 90})[level] + 0.2 * GetBonusAP(source) end},
+  },
+
+  ["Syndra"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return (({50, 95, 140, 185, 230})[level] + 0.6 * GetBonusAP(source)) * ((level == 5 and GetObjectType(target) == Obj_AI_Hero) and 1.15 or 1) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({270, 405, 540})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({90, 135, 180})[level] + 0.2 * GetBonusAP(source) end},
+  },
+
+  ["Talon"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({30, 60, 90, 120, 150})[level] + 0.3 * source.totalDamage + ((GetObjectType(target) == Obj_AI_Hero) and (({10, 20, 30, 40, 50})[level] + source.totalDamage) or 0) end},
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return ({30, 55, 80, 105, 130})[level] + 0.6 * source.totalDamage end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({120, 170, 220})[level] + 0.75 * source.totalDamage end},
+  },
+
+  ["Taric"] = {
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({40, 80, 120, 160, 200})[level] + 0.2 * GetArmor(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({40, 70, 100, 130, 160})[level] + 0.2 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.5 * GetBonusAP(source) end},
+  },
+
+  ["TahmKench"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 125, 170, 215, 260})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return GetObjectType(target) == Obj_AI_Minion and ({400, 450, 500, 550, 600})[level] or (({0.20, 0.23, 0.26, 0.29, 0.32})[level] + 0.02 * GetBonusAP(source) / 100) * GetMaxHP(target) end},
+    {Slot = "W", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({100, 150, 200, 250, 300})[level] + 0.6 * GetBonusAP(source) end},
+  },
+
+
+  ["Teemo"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 125, 170, 215, 260})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({34, 68, 102, 136, 170})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({10, 20, 30, 40, 50})[level] + 0.3 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({200, 325, 450})[level] + 0.5 * GetBonusAP(source) end},
+  },
+
+  ["Thresh"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({65, 95, 125, 155, 185})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({250, 400, 550})[level] + GetBonusAP(source) end},
+  },
+
+  ["Tristana"] = {
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210, 260})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({60, 70, 80, 90, 100})[level] + ({0.5, 0.65, 0.8, 0.95, 1.10})[level] * source.totalDamage + 0.5 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({300, 400, 500})[level] + GetBonusAP(source) end},
+  },
+
+  ["Trundle"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({20, 40, 60, 80, 100})[level] + ({0, 0.5, 0.1, 0.15, 0.2})[level] * source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return (({20, 24, 28})[level] / 100 + 0.02 * GetBonusAP(source) / 100) * GetMaxHP(target) end},
+  },
+
+  ["Tryndamere"] = {
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({70, 100, 130, 160, 190})[level] + 1.2 * source.totalDamage + GetBonusAP(source) end},
+  },
+
+  ["TwistedFate"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 105, 150, 195, 240})[level] + 0.65 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({40, 60, 80, 100, 120})[level] + source.totalDamage + 0.5 * GetBonusAP(source) end},
+    {Slot = "W", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({30, 45, 60, 75, 90})[level] + source.totalDamage + 0.5 * GetBonusAP(source) end},
+    {Slot = "W", Stage = 3, DamageType = 2, Damage = function(source, target, level) return ({15, 22.5, 30, 37.5, 45})[level] + source.totalDamage + 0.5 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({55, 80, 105, 130, 155})[level] + 0.5 * GetBonusAP(source) end},
+  },
+
+  ["Twitch"] = {
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return (GotBuff(target, "twitchdeadlyvenom") * ({15, 20, 25, 30, 35})[level] + 0.2 * GetBonusAP(source) + 0.25 * source.totalDamage) + ({20, 35, 50, 65, 80})[level] end},
+    {Slot = "E", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({15, 20, 25, 30, 35})[level] + 0.2 * GetBonusAP(source) + 0.25 * source.totalDamage + ({20, 35, 50, 65, 80})[level] end},
+  },
+
+  ["Udyr"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({30, 80, 130, 180, 230})[level] + (({120, 130, 140, 150, 160})[level] / 100) * source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({10, 20, 30, 40, 50})[level] + 0.25 * GetBonusAP(source) end},
+
+  },
+
+  ["Urgot"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({10, 40, 70, 100, 130})[level] + 0.85 * source.totalDamage end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({75, 130, 185, 240, 295})[level] + 0.6 * source.totalDamage end},
+  },
+
+  ["Varus"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({10, 47, 83, 120, 157})[level] + source.totalDamage end},
+    {Slot = "Q", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({15, 70, 125, 180, 235})[level] + 1.6 * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({10, 14, 18, 22, 26})[level] + 0.25 * GetBonusAP(source) end},
+    {Slot = "W", Stage = 2, DamageType = 2, Damage = function(source, target, level) return (({2, 2.75, 3.5, 4.25, 5})[level] / 100 + 0.02 * GetBonusAP(source) / 100) * GetMaxHP(target) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({65, 100, 135, 170, 205})[level] + 0.6 * source.totalDamage end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({100, 175, 250})[level] + GetBonusAP(source) end},
+  },
+
+  ["Vayne"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({30, 35, 40, 45, 50})[level] / 100 * source.totalDamage end},
+    {Slot = "W", DamageType = 3, Damage = function(source, target, level) return math.max(({40, 60, 80, 100, 120})[level], (({6, 7.5, 9, 10.5, 12})[level] / 100) * GetMaxHP(target)) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({45, 80, 115, 150, 185})[level] + 0.5 * source.totalDamage end},
+  },
+
+  ["Veigar"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 125, 170, 215, 260})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({120, 170, 220, 270, 320})[level] + GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({250, 375, 500})[level] + 0.8 * target.totalDamage + 1.0 * GetBonusAP(source) end},
+  },
+
+  ["Velkoz"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({30, 50, 70, 90, 110})[level] + ({45, 75, 105, 135, 165})[level] + 0.625 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 100, 130, 160, 190})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({500, 700, 900})[level] + 0.6 * GetBonusAP(source) end},
+  },
+
+  ["Vi"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({50, 75, 100, 125, 150})[level] + 0.8 * source.totalDamage end},
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return (({4, 5.5, 7, 8.5, 10})[level] / 100 + 0.01 * source.totalDamage / 35) * GetMaxHP(target) end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({5, 20, 35, 50, 65})[level] + 1.15 * source.totalDamage + 0.7 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({150, 300, 450})[level] + 1.4 * source.totalDamage end},
+  },
+
+  ["Viktor"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({40, 60, 80, 100, 120})[level] + 0.2 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({98, 161, 224, 287, 350})[level] + 0.98 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.55 * GetBonusAP(source) end},
+    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({15, 30, 45})[level] + 0.1 * GetBonusAP(source) end},
+  },
+
+  ["Vladimir"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({90, 125, 160, 195, 230})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({80, 135, 190, 245, 300})[level] end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 85, 110, 135, 160})[level] + 0.45 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.7 * GetBonusAP(source) end},
+  },
+
+  ["Volibear"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({30, 60, 90, 120, 150})[level] end},
+    {Slot = "W", DamageType = 1, Damage = function(source, target, level) return (({80, 125, 170, 215, 260})[level]) * ((GetMaxHP(target) - GetCurrentHP(target)) / GetMaxHP(target) + 1) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 105, 150, 195, 240})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({75, 115, 155})[level] + 0.3 * GetBonusAP(source) end},
+  },
+
+  ["Warwick"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return math.max(({75, 125, 175, 225, 275})[level],(({8, 10, 12, 14, 16})[level] / 100  * GetMaxHP(target)) + GetBonusAP(source)) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 2 * source.totalDamage end},
+  },
+
+  ["Xerath"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.75 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 110, 140, 170, 200})[level] + 0.45 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({190, 245, 300})[level] + 0.43 * GetBonusAP(source) end},
+  },
+
+  ["XinZhao"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({15, 30, 45, 60, 75})[level] + 0.2 * source.totalDamage end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({75, 175, 275})[level] + source.totalDamage + 0.15 * GetCurrentHP(target) end},
+  },
+
+  ["Yasuo"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({20, 40, 60, 80, 100})[level] + source.totalDamage end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 90, 110, 130, 150})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return ({200, 300, 400})[level] + 1.5 * source.totalDamage end},
+  },
+
+  ["Yorick"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({30, 60, 90, 120, 150})[level] + 1.2 * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({60, 95, 130, 165, 200})[level] + GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({55, 85, 115, 145, 175})[level] + source.totalDamage end},
+  },
+
+  ["Zac"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({40, 55, 70, 85, 100})[level] + (({4, 5, 6, 7, 8})[level] / 100 + 0.02 * GetBonusAP(source) / 100) * GetMaxHP(target) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 130, 180, 230, 280})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({140, 210, 280})[level] + 0.4 * GetBonusAP(source) end},
+  },
+
+  ["Zed"] = {
+    {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({75, 115, 155, 195, 235})[level] + source.totalDamage end},
+    {Slot = "E", DamageType = 1, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.8 * source.totalDamage end},
+    {Slot = "R", DamageType = 1, Damage = function(source, target, level) return source.totalDamage end},
+  },
+
+  ["Ziggs"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({75, 120, 165, 210, 255})[level] + 0.65 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({70, 105, 140, 175, 210})[level] + 0.35 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({40, 65, 90, 115, 140})[level] + 0.3 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({300, 450, 600})[level] + 1.1 * GetBonusAP(source) end},
+  },
+
+  ["Zilean"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({90, 145, 200, 260, 320})[level] + 0.9 * GetBonusAP(source) end},
+  },
+
+  ["Zyra"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({70, 105, 140, 175, 210})[level] + 0.65 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 95, 130, 165, 200})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({180, 265, 350})[level] + 0.7 * GetBonusAP(source) end},
+  }
+
+}
+
+function string.ends(String,End)
+  return End == "" or string.sub(String,-string.len(End)) == End
 end
 
 function GetHP(unit)
-    return GetCurrentHP(unit)+GetDmgShield(unit)
+  return GetCurrentHP(unit)+GetDmgShield(unit)
 end
 
 function GetHP2(unit)
-    return GetCurrentHP(unit)+GetDmgShield(unit)+GetMagicShield(unit)
+  return GetCurrentHP(unit)+GetDmgShield(unit)+GetMagicShield(unit)
+end
+
+function CalcPhysicalDamage(source, target, amount)
+  local ArmorPenPercent = GetArmorPenPercent(source)
+  local ArmorPenFlat = GetArmorPenFlat(source)
+  local BonusArmorPen = source.bonusArmorPenPercent
+
+  if GetObjectType(source) == Obj_AI_Minion or GetObjectType(source) == Obj_AI_Turret then
+    ArmorPenPercent = 0
+    ArmorPenFlat = 1
+    BonusArmorPen = 1
+  end
+
+  if GetObjectType(source) == Obj_AI_Turret then
+    if GetObjectType(target) == Obj_AI_Minion then
+      amount = amount * 1.25
+      if string.ends(GetObjectName(target), "MinionSiege") then
+        amount = amount * 0.7
+      end
+      return amount
+    end
+  end
+
+  local armor = GetArmor(target)
+  local bonusArmor = GetArmor(target) - GetBaseArmor(target)
+  local value
+
+  if armor < 0 then
+    value = 2 - 100 / (100 - armor)
+  elseif (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat < 0 then
+    value = 1
+  else
+    value = 100 / (100 + (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat)
+  end
+  return DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 1)
+end
+
+function CalcMagicalDamage(source, target, amount)
+  local mr = GetMagicResist(target)
+  local value
+
+  if mr < 0 then
+    value = 2 - 100 / (100 - mr)
+  elseif (mr * GetMagicPenPercent(source)) - GetMagicPenFlat(source) < 0 then
+    value = 1
+  else
+    value = 100 / (100 + (mr * GetMagicPenPercent(source)) - GetMagicPenFlat(source))
+  end
+  return DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 2)
+end
+
+function DamageReductionMod(source,target,amount,DamageType)
+  if GetObjectType(source) == Obj_AI_Hero then
+    if UnitHaveBuff(source, "Exhaust") then
+      amount = amount * 0.6
+    end
+
+    if UnitHaveBuff(source, "itemphantomdancerdebuff") then
+      amount = amount * 0.88
+    end
+
+    if GetItemSlot(target, 1054) > 0 then
+      amount = amount - 8
+    end
+
+    if UnitHaveBuff(target, "Ferocious Howl") then
+      amount = amount * 0.3
+    end
+
+    if UnitHaveBuff(target, "Tantrum") and DamageType == 1 then
+      amount = amount - ({2, 4, 6, 8, 10})[GetCastLevel(target, _E)]
+    end
+
+    if UnitHaveBuff(target, "BraumShieldRaise") then
+      amount = amount - amount * ({0.3, 0.325, 0.35, 0.375, 0.4})[GetCastLevel(target, _E)]
+    end
+
+    if UnitHaveBuff(target, "GalioIdolOfDurand") then
+      amount = amount * 0.5
+    end
+
+    if UnitHaveBuff(target, "GarenW") then
+      amount = amount * 0.7
+    end
+
+    if UnitHaveBuff(target, "GragasWSelf") then
+      amount = amount - amount * ({0.1, 0.12, 0.14, 0.16, 0.18})[GetCastLevel(target, _W)]
+    end
+
+    if UnitHaveBuff(target, "VoidStone") and DamageType == 2 then
+      amount = amount * 0.85
+    end
+
+    if UnitHaveBuff(target, "KatarinaEReduction") then
+      amount = amount * 0.85
+    end
+
+    if UnitHaveBuff(target, "MaokaiDrainDefense") and GetObjectType(source) ~= Obj_AI_Turret then
+      amount = amount * 0.8
+    end
+
+    if UnitHaveBuff(target, "Meditate") then
+      amount = amount - amount * ({0.5, 0.55, 0.6, 0.65, 0.7})[GetCastLevel(target, _W)] / (GetObjectType(source) == Obj_AI_Turret and 2 or 1)
+    end
+
+    if UnitHaveBuff(target, "Shen Shadow Dash") and UnitHaveBuff(source, "Taunt") and DamageType == 1 then
+      amount = amount * 0.5
+    end
+  end
+  return amount
+end
+
+function PassivePercentMod(source, target, amount)
+  local SiegeMinionList = {"Red_Minion_MechCannon", "Blue_Minion_MechCannon"}
+  local NormalMinionList = {"Red_Minion_Wizard", "Blue_Minion_Wizard", "Red_Minion_Basic", "Blue_Minion_Basic"}
+
+  if GetObjectType(source) == Obj_AI_Turret then
+    if table.contains(SiegeMinionList, GetObjectName(target)) then
+      amount = amount * 0.7
+    elseif table.contains(NormalMinionList, GetObjectName(target)) then
+      amount = amount * 1.14285714285714
+    end
+  end
+  return amount
+end
+
+function getdmg(spell,target,source,stage,level)
+  local str = {["Q"] = _Q, ["QM"] = _Q, ["W"] = _W, ["WM"] = _W, ["E"] = _E, ["EM"] = _E, ["R"] = _R}
+  local source = source or myHero
+  local stage = stage or 0
+  if stage > 4 then stage = 4 end
+  if spell == "Q" or spell == "W" or spell == "E" or spell == "R" or spell == "QM" or spell == "WM" or spell == "EM" then
+    local level = level or GetCastLevel(source, str[spell])
+    if level == 0 then return 0 end
+    if DamageLibTable[GetObjectName(source)] then
+      for i, spells in pairs(DamageLibTable[GetObjectName(source)]) do
+        if spells.Slot == spell then
+          if spells.Stage then
+            if spells.Stage == stage then
+              if spells.DamageType == 1 then
+                return CalcPhysicalDamage(source, target, spells.Damage(source, target, level))
+              elseif spells.DamageType == 2 then
+                return CalcMagicalDamage(source, target, spells.Damage(source, target, level))
+              elseif DamageType == 3 then
+                return spells.Damage(source, target, level)
+              end
+            elseif spells.Stage == stage-1 then
+              if spells.DamageType == 1 then
+                return CalcPhysicalDamage(source, target, spells.Damage(source, target, level))
+              elseif spells.DamageType == 2 then
+                return CalcMagicalDamage(source, target, spells.Damage(source, target, level))
+              elseif DamageType == 3 then
+                return spells.Damage(source, target, level)
+              end
+            elseif spells.Stage == stage-2 then
+              if spells.DamageType == 1 then
+                return CalcPhysicalDamage(source, target, spells.Damage(source, target, level))
+              elseif spells.DamageType == 2 then
+                return CalcMagicalDamage(source, target, spells.Damage(source, target, level))
+              elseif DamageType == 3 then
+                return spells.Damage(source, target, level)
+              end
+            elseif spells.Stage == stage-3 then
+              if spells.DamageType == 1 then
+                return CalcPhysicalDamage(source, target, spells.Damage(source, target, level))
+              elseif spells.DamageType == 2 then
+                return CalcMagicalDamage(source, target, spells.Damage(source, target, level))
+              elseif DamageType == 3 then
+                return spells.Damage(source, target, level)
+              end
+            elseif spells.Stage == stage-4 then
+              if spells.DamageType == 1 then
+                return CalcPhysicalDamage(source, target, spells.Damage(source, target, level))
+              elseif spells.DamageType == 2 then
+                return CalcMagicalDamage(source, target, spells.Damage(source, target, level))
+              elseif DamageType == 3 then
+                return spells.Damage(source, target, level)
+              end
+            end
+          else
+            if spells.DamageType == 1 then
+              return CalcPhysicalDamage(source, target, spells.Damage(source, target, level))
+            elseif spells.DamageType == 2 then
+              return CalcMagicalDamage(source, target, spells.Damage(source, target, level))
+            elseif DamageType == 3 then
+              return spells.Damage(source, target, level)
+            end
+          end
+        end
+      end
+    end
+  end
+  if spell == "IGNITE" then
+    if Ignite then
+      return 50+20*GetLevel(source) - (GetHPRegen(target)*3)
+    end
+  end
+  if spell == "SMITE" then
+    if Smite then
+      if GetObjectType(target) == Obj_AI_Hero then
+        if GetCastName(source, Smite) == "s5_summonersmiteplayerganker" then
+          return 20+8*GetLevel(source)
+        end
+        if GetCastName(source, Smite) == "s5_summonersmiteduel" then
+          return 54+6*GetLevel(source)
+        end
+      end
+      return ({390, 410, 430, 450, 480, 510, 540, 570, 600, 640, 680, 720, 760, 800, 850, 900, 950, 1000})[GetLevel(source)]
+    end
+  end
+  if spell == "BILGEWATER" then
+    return CalcMagicalDamage(source, target, 100)
+  end
+  if spell == "BOTRK" then
+    return CalcPhysicalDamage(source, target, GetMaxHP(target)*0.1)
+  end
+  if spell == "HEXTECH" then
+    return CalcMagicalDamage(source, target, 150+0.4*GetBonusAP(source))
+  end
+  return 0
 end
