@@ -12,6 +12,142 @@ getdmg("SKILL",target,myHero,stagedmg,spelllvl)
 _G.Ignite = (GetCastName(myHero, SUMMONER_1):lower():find("summonerdot") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("summonerdot") and SUMMONER_2 or nil))
 _G.Smite = (GetCastName(myHero, SUMMONER_1):lower():find("smite") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("smite") and SUMMONER_2 or nil))
 
+function string.ends(String,End)
+  return End == "" or string.sub(String,-string.len(End)) == End
+end
+
+function GetHP(unit)
+  return GetCurrentHP(unit)+GetDmgShield(unit)
+end
+
+function GetHP2(unit)
+  return GetCurrentHP(unit)+GetDmgShield(unit)+GetMagicShield(unit)
+end
+
+function CalcPhysicalDamage(source, target, amount)
+  local ArmorPenPercent = GetArmorPenPercent(source)
+  local ArmorPenFlat = GetArmorPenFlat(source)
+  local BonusArmorPen = source.bonusArmorPenPercent
+
+  if GetObjectType(source) == Obj_AI_Minion or GetObjectType(source) == Obj_AI_Turret then
+    ArmorPenPercent = 0
+    ArmorPenFlat = 1
+    BonusArmorPen = 1
+  end
+
+  if GetObjectType(source) == Obj_AI_Turret then
+    if GetObjectType(target) == Obj_AI_Minion then
+      amount = amount * 1.25
+      if string.ends(GetObjectName(target), "MinionSiege") then
+        amount = amount * 0.7
+      end
+      return amount
+    end
+  end
+
+  local armor = GetArmor(target)
+  local bonusArmor = GetArmor(target) - GetBaseArmor(target)
+  local value
+
+  if armor < 0 then
+    value = 2 - 100 / (100 - armor)
+  elseif (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat < 0 then
+    value = 1
+  else
+    value = 100 / (100 + (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat)
+  end
+  return DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 1)
+end
+
+function CalcMagicalDamage(source, target, amount)
+  local mr = GetMagicResist(target)
+  local value
+
+  if mr < 0 then
+    value = 2 - 100 / (100 - mr)
+  elseif (mr * GetMagicPenPercent(source)) - GetMagicPenFlat(source) < 0 then
+    value = 1
+  else
+    value = 100 / (100 + (mr * GetMagicPenPercent(source)) - GetMagicPenFlat(source))
+  end
+  return DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 2)
+end
+
+function DamageReductionMod(source,target,amount,DamageType)
+  if GetObjectType(source) == Obj_AI_Hero then
+    if UnitHaveBuff(source, "Exhaust") then
+      amount = amount * 0.6
+    end
+
+    if UnitHaveBuff(source, "itemphantomdancerdebuff") then
+      amount = amount * 0.88
+    end
+
+    if GetItemSlot(target, 1054) > 0 then
+      amount = amount - 8
+    end
+
+    if UnitHaveBuff(target, "Ferocious Howl") then
+      amount = amount * 0.3
+    end
+
+    if UnitHaveBuff(target, "Tantrum") and DamageType == 1 then
+      amount = amount - ({2, 4, 6, 8, 10})[GetCastLevel(target, _E)]
+    end
+
+    if UnitHaveBuff(target, "BraumShieldRaise") then
+      amount = amount - amount * ({0.3, 0.325, 0.35, 0.375, 0.4})[GetCastLevel(target, _E)]
+    end
+
+    if UnitHaveBuff(target, "GalioIdolOfDurand") then
+      amount = amount * 0.5
+    end
+
+    if UnitHaveBuff(target, "GarenW") then
+      amount = amount * 0.7
+    end
+
+    if UnitHaveBuff(target, "GragasWSelf") then
+      amount = amount - amount * ({0.1, 0.12, 0.14, 0.16, 0.18})[GetCastLevel(target, _W)]
+    end
+
+    if UnitHaveBuff(target, "VoidStone") and DamageType == 2 then
+      amount = amount * 0.85
+    end
+
+    if UnitHaveBuff(target, "KatarinaEReduction") then
+      amount = amount * 0.85
+    end
+
+    if UnitHaveBuff(target, "MaokaiDrainDefense") and GetObjectType(source) ~= Obj_AI_Turret then
+      amount = amount * 0.8
+    end
+
+    if UnitHaveBuff(target, "Meditate") then
+      amount = amount - amount * ({0.5, 0.55, 0.6, 0.65, 0.7})[GetCastLevel(target, _W)] / (GetObjectType(source) == Obj_AI_Turret and 2 or 1)
+    end
+
+    if UnitHaveBuff(target, "Shen Shadow Dash") and UnitHaveBuff(source, "Taunt") and DamageType == 1 then
+      amount = amount * 0.5
+    end
+  end
+  return amount
+end
+
+function PassivePercentMod(source, target, amount)
+  local SiegeMinionList = {"Red_Minion_MechCannon", "Blue_Minion_MechCannon"}
+  local NormalMinionList = {"Red_Minion_Wizard", "Blue_Minion_Wizard", "Red_Minion_Basic", "Blue_Minion_Basic"}
+
+  if GetObjectType(source) == Obj_AI_Turret then
+    if table.contains(SiegeMinionList, GetObjectName(target)) then
+      amount = amount * 0.7
+    elseif table.contains(NormalMinionList, GetObjectName(target)) then
+      amount = amount * 1.14285714285714
+    end
+  end
+  return amount
+end
+
 local DamageLibTable = {
   ["Aatrox"] = {
     {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.6 * source.totalDamage end},
@@ -49,7 +185,7 @@ local DamageLibTable = {
   },
 
   ["Anivia"] = {
-    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 85, 110, 135, 160})[level] + 0.4 * GetBonusAP(source) end},
     {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] * 2 + GetBonusAP(source) end},
     {Slot = "E", DamageType = 2, Damage = function(source, target, level) return (({55, 85, 115, 145, 175})[level] + 0.5 * GetBonusAP(source)) * (GotBuff(target, "chilled") and 2 or 1) end},
     {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160})[level] + 0.25 * GetBonusAP(source) end},
@@ -58,7 +194,7 @@ local DamageLibTable = {
   ["Annie"] = {
     {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 115, 150, 185, 220})[level] + 0.8 * GetBonusAP(source) end},
     {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.85 * GetBonusAP(source) end},
-    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({210, 335, 460})[level] + GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({210, 365, 520})[level] + 0.9 * GetBonusAP(source) end},
   },
 
   ["Ashe"] = {
@@ -85,10 +221,10 @@ local DamageLibTable = {
   },
 
   ["Brand"] = {
-    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.65 * GetBonusAP(source) end},
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 110, 140, 170, 200})[level] + 0.55 * GetBonusAP(source) end},
     {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({75, 120, 165, 210, 255})[level] + 0.6 * GetBonusAP(source) end},
-    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 105, 140, 175, 210})[level] + 0.55 * GetBonusAP(source) end},
-    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 90, 110, 130, 150})[level] + 0.35 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({100, 200, 300})[level] + 0.25 * GetBonusAP(source) end},
   },
 
   ["Braum"] = {
@@ -103,9 +239,9 @@ local DamageLibTable = {
   },
 
   ["Cassiopeia"] = {
-    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({75, 115, 155, 195, 235})[level] + 0.45 * GetBonusAP(source) end},
-    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({10, 15, 20, 25, 30})[level] + 0.1 * GetBonusAP(source) end},
-    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({55, 80, 105, 130, 155})[level] + 0.55 * GetBonusAP(source) end},
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({75, 120, 165, 210, 255})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({20, 35, 50, 65, 80})[level] + 0.15 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({53, 57, 61, 65, 69, 73, 77, 81, 85, 89, 93, 97, 101, 105, 109, 113, 117, 121})[GetLevel(source)] + 0.1 * GetBonusAP(source) + (target.isPoisoned and ({10, 40, 70, 100, 130})[level] + 0.35 * GetBonusAP(source) or 0) end},
     {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.5 * GetBonusAP(source) end},
   },
 
@@ -422,10 +558,10 @@ local DamageLibTable = {
   },
 
   ["Malzahar"] = {
-    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 135, 190, 245, 300})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 0.7 * GetBonusAP(source) end},
     {Slot = "W", DamageType = 2, Damage = function(source, target, level) return (({4, 4.5, 5, 5.5, 6})[level] / 100 + 0.01 / 100 * GetBonusAP(source)) * GetMaxHP(target) end},
-    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 140, 200, 260, 320})[level] + 0.8 * GetBonusAP(source) end},
-    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({250, 400, 550})[level] + 1.3 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 115, 150, 185, 220})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return 2.5 * (({6, 8, 10})[level] / 100 + 0.015 * GetBonusAP(source) / 100) * GetMaxHP(target) end},
   },
 
   ["Maokai"] = {
@@ -656,13 +792,13 @@ local DamageLibTable = {
   ["Swain"] = {
     {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({25, 40, 55, 70, 85})[level] + 0.3 * GetBonusAP(source) end},
     {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.7 * GetBonusAP(source) end},
-    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({75, 115, 155, 195, 235})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({50, 80, 110, 140, 170})[level] * GetBonusAP(source) end},
     {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({50, 70, 90})[level] + 0.2 * GetBonusAP(source) end},
   },
 
   ["Syndra"] = {
-    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return (({50, 95, 140, 185, 230})[level] + 0.6 * GetBonusAP(source)) * ((level == 5 and GetObjectType(target) == Obj_AI_Hero) and 1.15 or 1) end},
-    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({50, 95, 140, 185, 230})[level] + 0.75 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.75 * GetBonusAP(source) end},
     {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.4 * GetBonusAP(source) end},
     {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({270, 405, 540})[level] + 0.6 * GetBonusAP(source) end},
     {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({90, 135, 180})[level] + 0.2 * GetBonusAP(source) end},
@@ -757,14 +893,14 @@ local DamageLibTable = {
   ["Veigar"] = {
     {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 125, 170, 215, 260})[level] + 0.6 * GetBonusAP(source) end},
     {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({120, 170, 220, 270, 320})[level] + GetBonusAP(source) end},
-    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({250, 375, 500})[level] + 0.8 * target.totalDamage + 1.0 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({175, 250, 325})[level] + 0.8 * GetBonusAP(target) + 0.75 * GetBonusAP(source) end},
   },
 
   ["Velkoz"] = {
     {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.6 * GetBonusAP(source) end},
-    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({30, 50, 70, 90, 110})[level] + ({45, 75, 105, 135, 165})[level] + 0.625 * GetBonusAP(source) end},
-    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 100, 130, 160, 190})[level] + 0.5 * GetBonusAP(source) end},
-    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({500, 700, 900})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({30, 50, 70, 90, 110})[level] + ({45, 75, 105, 135, 165})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 100, 130, 160, 190})[level] + 0.3 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 3, Damage = function(source, target, level) return (GotBuff(target, "velkozresearchedstack") > 0 and ({500, 725, 950})[level] + GetBonusAP(source) or CalcMagicalDamage(source, target, ({500, 725, 950})[level] + GetBonusAP(source))) end},
   },
 
   ["Vi"] = {
@@ -775,16 +911,16 @@ local DamageLibTable = {
   },
 
   ["Viktor"] = {
-    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({40, 60, 80, 100, 120})[level] + 0.2 * GetBonusAP(source) end},
-    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.7 * GetBonusAP(source) end},
-    {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({98, 161, 224, 287, 350})[level] + 0.98 * GetBonusAP(source) end},
-    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.55 * GetBonusAP(source) end},
-    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({15, 30, 45})[level] + 0.1 * GetBonusAP(source) end},
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 80, 100, 120, 140})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({90, 170, 250, 330, 410})[level] + 1.2 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({100, 175, 250})[level] + 0.5 * GetBonusAP(source) end},
+    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.6 * GetBonusAP(source) end},
   },
 
   ["Vladimir"] = {
-    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({90, 125, 160, 195, 230})[level] + 0.6 * GetBonusAP(source) end},
-    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({80, 135, 190, 245, 300})[level] end},
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 100, 120, 140, 160})[level] + 0.45 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({60, 80, 100, 120, 140})[level] end},
     {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 85, 110, 135, 160})[level] + 0.45 * GetBonusAP(source) end},
     {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.7 * GetBonusAP(source) end},
   },
@@ -805,7 +941,7 @@ local DamageLibTable = {
     {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.75 * GetBonusAP(source) end},
     {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.6 * GetBonusAP(source) end},
     {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({80, 110, 140, 170, 200})[level] + 0.45 * GetBonusAP(source) end},
-    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({190, 245, 300})[level] + 0.43 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({200, 230, 260})[level] + 0.43 * GetBonusAP(source) end},
   },
 
   ["XinZhao"] = {
@@ -851,148 +987,12 @@ local DamageLibTable = {
   },
 
   ["Zyra"] = {
-    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({70, 105, 140, 175, 210})[level] + 0.65 * GetBonusAP(source) end},
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.55 * GetBonusAP(source) end},
     {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 95, 130, 165, 200})[level] + 0.5 * GetBonusAP(source) end},
     {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({180, 265, 350})[level] + 0.7 * GetBonusAP(source) end},
   }
 
 }
-
-function string.ends(String,End)
-  return End == "" or string.sub(String,-string.len(End)) == End
-end
-
-function GetHP(unit)
-  return GetCurrentHP(unit)+GetDmgShield(unit)
-end
-
-function GetHP2(unit)
-  return GetCurrentHP(unit)+GetDmgShield(unit)+GetMagicShield(unit)
-end
-
-function CalcPhysicalDamage(source, target, amount)
-  local ArmorPenPercent = GetArmorPenPercent(source)
-  local ArmorPenFlat = GetArmorPenFlat(source)
-  local BonusArmorPen = source.bonusArmorPenPercent
-
-  if GetObjectType(source) == Obj_AI_Minion or GetObjectType(source) == Obj_AI_Turret then
-    ArmorPenPercent = 0
-    ArmorPenFlat = 1
-    BonusArmorPen = 1
-  end
-
-  if GetObjectType(source) == Obj_AI_Turret then
-    if GetObjectType(target) == Obj_AI_Minion then
-      amount = amount * 1.25
-      if string.ends(GetObjectName(target), "MinionSiege") then
-        amount = amount * 0.7
-      end
-      return amount
-    end
-  end
-
-  local armor = GetArmor(target)
-  local bonusArmor = GetArmor(target) - GetBaseArmor(target)
-  local value
-
-  if armor < 0 then
-    value = 2 - 100 / (100 - armor)
-  elseif (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat < 0 then
-    value = 1
-  else
-    value = 100 / (100 + (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat)
-  end
-  return DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 1)
-end
-
-function CalcMagicalDamage(source, target, amount)
-  local mr = GetMagicResist(target)
-  local value
-
-  if mr < 0 then
-    value = 2 - 100 / (100 - mr)
-  elseif (mr * GetMagicPenPercent(source)) - GetMagicPenFlat(source) < 0 then
-    value = 1
-  else
-    value = 100 / (100 + (mr * GetMagicPenPercent(source)) - GetMagicPenFlat(source))
-  end
-  return DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 2)
-end
-
-function DamageReductionMod(source,target,amount,DamageType)
-  if GetObjectType(source) == Obj_AI_Hero then
-    if UnitHaveBuff(source, "Exhaust") then
-      amount = amount * 0.6
-    end
-
-    if UnitHaveBuff(source, "itemphantomdancerdebuff") then
-      amount = amount * 0.88
-    end
-
-    if GetItemSlot(target, 1054) > 0 then
-      amount = amount - 8
-    end
-
-    if UnitHaveBuff(target, "Ferocious Howl") then
-      amount = amount * 0.3
-    end
-
-    if UnitHaveBuff(target, "Tantrum") and DamageType == 1 then
-      amount = amount - ({2, 4, 6, 8, 10})[GetCastLevel(target, _E)]
-    end
-
-    if UnitHaveBuff(target, "BraumShieldRaise") then
-      amount = amount - amount * ({0.3, 0.325, 0.35, 0.375, 0.4})[GetCastLevel(target, _E)]
-    end
-
-    if UnitHaveBuff(target, "GalioIdolOfDurand") then
-      amount = amount * 0.5
-    end
-
-    if UnitHaveBuff(target, "GarenW") then
-      amount = amount * 0.7
-    end
-
-    if UnitHaveBuff(target, "GragasWSelf") then
-      amount = amount - amount * ({0.1, 0.12, 0.14, 0.16, 0.18})[GetCastLevel(target, _W)]
-    end
-
-    if UnitHaveBuff(target, "VoidStone") and DamageType == 2 then
-      amount = amount * 0.85
-    end
-
-    if UnitHaveBuff(target, "KatarinaEReduction") then
-      amount = amount * 0.85
-    end
-
-    if UnitHaveBuff(target, "MaokaiDrainDefense") and GetObjectType(source) ~= Obj_AI_Turret then
-      amount = amount * 0.8
-    end
-
-    if UnitHaveBuff(target, "Meditate") then
-      amount = amount - amount * ({0.5, 0.55, 0.6, 0.65, 0.7})[GetCastLevel(target, _W)] / (GetObjectType(source) == Obj_AI_Turret and 2 or 1)
-    end
-
-    if UnitHaveBuff(target, "Shen Shadow Dash") and UnitHaveBuff(source, "Taunt") and DamageType == 1 then
-      amount = amount * 0.5
-    end
-  end
-  return amount
-end
-
-function PassivePercentMod(source, target, amount)
-  local SiegeMinionList = {"Red_Minion_MechCannon", "Blue_Minion_MechCannon"}
-  local NormalMinionList = {"Red_Minion_Wizard", "Blue_Minion_Wizard", "Red_Minion_Basic", "Blue_Minion_Basic"}
-
-  if GetObjectType(source) == Obj_AI_Turret then
-    if table.contains(SiegeMinionList, GetObjectName(target)) then
-      amount = amount * 0.7
-    elseif table.contains(NormalMinionList, GetObjectName(target)) then
-      amount = amount * 1.14285714285714
-    end
-  end
-  return amount
-end
 
 function getdmg(spell,target,source,stage,level)
   local str = {["Q"] = _Q, ["QM"] = _Q, ["W"] = _W, ["WM"] = _W, ["E"] = _E, ["EM"] = _E, ["R"] = _R}
