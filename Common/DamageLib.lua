@@ -8,7 +8,11 @@ local damage = getdmg("R",target,source,3)
 Full function:
 getdmg("SKILL",target,myHero,stagedmg,spelllvl)
 ]]
-
+local version = 0.1
+--[[
+Changelog:
+0.1: fixed Kata W
+]]
 _G.Ignite = (GetCastName(myHero, SUMMONER_1):lower():find("summonerdot") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("summonerdot") and SUMMONER_2 or nil))
 _G.Smite = (GetCastName(myHero, SUMMONER_1):lower():find("smite") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("smite") and SUMMONER_2 or nil))
 
@@ -458,10 +462,10 @@ local DamageLibTable = {
   ["Katarina"] = {
     {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 85, 110, 135, 160})[level] + 0.45 * GetBonusAP(source) end},
     {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({15, 30, 45, 60, 75})[level] + 0.15 * GetBonusAP(source) end},
-    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({40, 75, 110, 145, 180})[level] + 0.6 * source.totalDamage + 0.25 * GetBonusAP(source) end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({40, 75, 110, 145, 180})[level] + 0.6 * source.damage + 0.25 * GetBonusAP(source) end},
     {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({40, 70, 100, 130, 160})[level] + 0.25 * GetBonusAP(source) end},
-    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return (({350, 550, 750})[level] + 3.75 * source.totalDamage + 2.5 * GetBonusAP(source)) / 10 end},
-    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({350, 550, 750})[level] + 3.75 * source.totalDamage + 2.5 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return (({350, 550, 750})[level] + 3.75 * source.damage + 2.5 * GetBonusAP(source)) / 10 end},
+    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({350, 550, 750})[level] + 3.75 * source.damage + 2.5 * GetBonusAP(source) end},
   },
 
   ["Kayle"] = {
