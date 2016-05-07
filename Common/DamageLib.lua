@@ -1056,7 +1056,7 @@ function getdmg(spell,target,source,stage,level)
               return CalcPhysicalDamage(source, target, spells.Damage(source, target, level))
             elseif spells.DamageType == 2 then
               return CalcMagicalDamage(source, target, spells.Damage(source, target, level))
-            elseif DamageType == 3 then
+            elseif spells.DamageType == 3 then
               return spells.Damage(source, target, level)
             end
           end
