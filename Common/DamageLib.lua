@@ -8,7 +8,7 @@ local damage = getdmg("R",target,source,3)
 Full function:
 getdmg("SKILL",target,myHero,stagedmg,spelllvl)
 ]]
-local version = 0.1
+DamageLibVersion = 0.01
 --[[
 Changelog:
 0.1: fixed Kata
