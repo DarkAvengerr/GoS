@@ -8,11 +8,9 @@ local damage = getdmg("R",target,source,3)
 Full function:
 getdmg("SKILL",target,myHero,stagedmg,spelllvl)
 ]]
+
 DamageLibVersion = 0.02
---[[
-Changelog:
-0.1: fixed Kata
-]]
+
 _G.Ignite = (GetCastName(myHero, SUMMONER_1):lower():find("summonerdot") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("summonerdot") and SUMMONER_2 or nil))
 _G.Smite = (GetCastName(myHero, SUMMONER_1):lower():find("smite") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("smite") and SUMMONER_2 or nil))
 
