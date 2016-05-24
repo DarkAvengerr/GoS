@@ -8,7 +8,7 @@ local damage = getdmg("R",target,source,3)
 Full function:
 getdmg("SKILL",target,myHero,stagedmg,spelllvl)
 ]]
-DamageLibVersion = 0.01
+DamageLibVersion = 0.02
 --[[
 Changelog:
 0.1: fixed Kata
@@ -79,11 +79,11 @@ end
 
 function DamageReductionMod(source,target,amount,DamageType)
   if GetObjectType(source) == Obj_AI_Hero then
-    if UnitHaveBuff(source, "Exhaust") then
+    if GotBuff(source, "Exhaust") > 0 then
       amount = amount * 0.6
     end
 
-    if UnitHaveBuff(source, "itemphantomdancerdebuff") then
+    if GotBuff(source, "itemphantomdancerdebuff") > 0 then
       amount = amount * 0.88
     end
 
@@ -91,47 +91,47 @@ function DamageReductionMod(source,target,amount,DamageType)
       amount = amount - 8
     end
 
-    if UnitHaveBuff(target, "Ferocious Howl") then
-      amount = amount * 0.3
+    if GotBuff(target, "Ferocious Howl") > 0 then
+      amount = amount * ({0.5, 0.4, 0.3})[GetCastLevel(target, _R)]
     end
 
-    if UnitHaveBuff(target, "Tantrum") and DamageType == 1 then
+    if GotBuff(target, "Tantrum") > 0 and DamageType == 1 then
       amount = amount - ({2, 4, 6, 8, 10})[GetCastLevel(target, _E)]
     end
 
-    if UnitHaveBuff(target, "BraumShieldRaise") then
+    if GotBuff(target, "BraumShieldRaise") > 0 then
       amount = amount - amount * ({0.3, 0.325, 0.35, 0.375, 0.4})[GetCastLevel(target, _E)]
     end
 
-    if UnitHaveBuff(target, "GalioIdolOfDurand") then
+    if GotBuff(target, "GalioIdolOfDurand") > 0 then
       amount = amount * 0.5
     end
 
-    if UnitHaveBuff(target, "GarenW") then
+    if GotBuff(target, "GarenW") > 0 then
       amount = amount * 0.7
     end
 
-    if UnitHaveBuff(target, "GragasWSelf") then
+    if GotBuff(target, "GragasWSelf") > 0 then
       amount = amount - amount * ({0.1, 0.12, 0.14, 0.16, 0.18})[GetCastLevel(target, _W)]
     end
 
-    if UnitHaveBuff(target, "VoidStone") and DamageType == 2 then
+    if GotBuff(target, "VoidStone") > 0 and DamageType == 2 then
       amount = amount * 0.85
     end
 
-    if UnitHaveBuff(target, "KatarinaEReduction") then
+    if GotBuff(target, "KatarinaEReduction") > 0 then
       amount = amount * 0.85
     end
 
-    if UnitHaveBuff(target, "MaokaiDrainDefense") and GetObjectType(source) ~= Obj_AI_Turret then
+    if GotBuff(target, "MaokaiDrainDefense") > 0 and GetObjectType(source) ~= Obj_AI_Turret then
       amount = amount * 0.8
     end
 
-    if UnitHaveBuff(target, "Meditate") then
+    if GotBuff(target, "Meditate") > 0 then
       amount = amount - amount * ({0.5, 0.55, 0.6, 0.65, 0.7})[GetCastLevel(target, _W)] / (GetObjectType(source) == Obj_AI_Turret and 2 or 1)
     end
 
-    if UnitHaveBuff(target, "Shen Shadow Dash") and UnitHaveBuff(source, "Taunt") and DamageType == 1 then
+    if GotBuff(target, "Shen Shadow Dash") > 0 and GotBuff(source, "Taunt") > 0 and DamageType == 1 then
       amount = amount * 0.5
     end
   end
@@ -207,6 +207,11 @@ local DamageLibTable = {
     {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return (({250, 425, 600})[level] + GetBonusAP(source)) / 2 end},
   },
 
+  ["AurelionSol"] = {
+    {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 0.65 * GetBonusAP(source) end},
+    {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.7 * GetBonusAP(source) end},
+  },
+  
   ["Azir"] = {
     {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({65, 85, 105, 125, 145})[level] + 0.5 * GetBonusAP(source) end},
     {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({55, 60, 75, 80, 90})[level] + 0.6 * GetBonusAP(source) end},
@@ -578,7 +583,7 @@ local DamageLibTable = {
 
   ["MasterYi"] = {
     {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({25, 60, 95, 130, 165})[level] + source.totalDamage + 0.6 * source.totalDamage end},
-    {Slot = "E", DamageType = 3, Damage = function(source, target, level) return ({10, 12.5, 15, 17.5, 20})[level] / 100 * source.totalDamage + ({10, 15, 20, 25, 30})[level] end},
+    {Slot = "E", DamageType = 3, Damage = function(source, target, level) return ({10, 12.5, 15, 17.5, 20})[level] / 100 * source.totalDamage + ({14, 23, 32, 41, 50})[level] end},
   },
 
   ["MissFortune"] = {
@@ -752,7 +757,7 @@ local DamageLibTable = {
 
   ["Shyvana"] = {
     {Slot = "Q", DamageType = 1, Damage = function(source, target, level) return ({80, 85, 90, 95, 100})[level] / 100 * source.totalDamage end},
-    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({20, 35, 50, 65, 80})[level] + 0.2 * source.totalDamage end},
+    {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({20, 32, 45, 57, 70})[level] + 0.2 * source.totalDamage + 0.1 * GetBonusAP(source) end},
     {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({60, 100, 140, 180, 220})[level] + 0.6 * GetBonusAP(source) end},
     {Slot = "R", DamageType = 2, Damage = function(source, target, level) return ({175, 300, 425})[level] + 0.7 * GetBonusAP(source) end},
   },
@@ -904,7 +909,7 @@ local DamageLibTable = {
     {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.6 * GetBonusAP(source) end},
     {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({30, 50, 70, 90, 110})[level] + ({45, 75, 105, 135, 165})[level] + 0.4 * GetBonusAP(source) end},
     {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({70, 100, 130, 160, 190})[level] + 0.3 * GetBonusAP(source) end},
-    {Slot = "R", DamageType = 3, Damage = function(source, target, level) return (GotBuff(target, "velkozresearchedstack") > 0 and ({500, 725, 950})[level] + GetBonusAP(source) or CalcMagicalDamage(source, target, ({500, 725, 950})[level] + GetBonusAP(source))) end},
+    {Slot = "R", DamageType = 3, Damage = function(source, target, level) return (GotBuff(target, "velkozresearchedstack") > 0 and ({500, 725, 950})[level] + 1.25* GetBonusAP(source) or CalcMagicalDamage(source, target, ({500, 725, 950})[level] + 1.25 * GetBonusAP(source))) end},
   },
 
   ["Vi"] = {
