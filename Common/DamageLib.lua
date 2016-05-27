@@ -9,7 +9,7 @@ Full function:
 getdmg("SKILL",target,myHero,stagedmg,spelllvl)
 ]]
 
-DamageLibVersion = 0.02
+DamageLibVersion = 0.03
 
 _G.Ignite = (GetCastName(myHero, SUMMONER_1):lower():find("summonerdot") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("summonerdot") and SUMMONER_2 or nil))
 _G.Smite = (GetCastName(myHero, SUMMONER_1):lower():find("smite") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("smite") and SUMMONER_2 or nil))
@@ -636,7 +636,7 @@ local DamageLibTable = {
 
   ["Nidalee"] = {
     {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 77.5, 95, 112.5, 130})[level] + 0.4 * GetBonusAP(source) end},
-    {Slot = "QM", Stage = 2, DamageType = 2, Damage = function(source, target, level) local dmg = (({4, 20, 50, 90})[GetCastLevel(source, _R)] + 0.36 * GetBonusAP(source) + 0.75 * source.totalDamage) * ((GetMaxHP(target) - GetCurrentHP(target)) / GetMaxHP(target) * 1.5 + 1) ; dmg = dmg * (GotBuff(target, "nidaleepassivehunted") and 1.33 or 1); return dmg end},
+    {Slot = "QM", Stage = 2, DamageType = 2, Damage = function(source, target, level) local dmg = (({4, 20, 50, 90})[GetCastLevel(source, _R)] + 0.36 * GetBonusAP(source) + 0.75 * source.totalDamage) * ((GetMaxHP(target) - GetCurrentHP(target)) / GetMaxHP(target) * 1.5 + 1) ; dmg = dmg * (GotBuff(target, "nidaleepassivehunted") > 0 and 1.33 or 1); return dmg end},
     {Slot = "W", DamageType = 2, Damage = function(source, target, level) return ({40, 80, 120, 160, 200})[level] + 0.2 * GetBonusAP(source) end},
     {Slot = "W", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210})[GetCastLevel(source, _R)] + 0.3 * GetBonusAP(source) end},
     {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({70, 130, 190, 250})[GetCastLevel(source, _R)] + 0.45 * GetBonusAP(source) end},
