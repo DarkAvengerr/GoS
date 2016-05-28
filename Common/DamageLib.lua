@@ -9,7 +9,7 @@ Full function:
 getdmg("SKILL",target,myHero,stagedmg,spelllvl)
 ]]
 
-DamageLibVersion = 0.03
+DamageLibVersion = 0.04
 
 _G.Ignite = (GetCastName(myHero, SUMMONER_1):lower():find("summonerdot") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("summonerdot") and SUMMONER_2 or nil))
 _G.Smite = (GetCastName(myHero, SUMMONER_1):lower():find("smite") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("smite") and SUMMONER_2 or nil))
@@ -79,10 +79,6 @@ function DamageReductionMod(source,target,amount,DamageType)
   if GetObjectType(source) == Obj_AI_Hero then
     if GotBuff(source, "Exhaust") > 0 then
       amount = amount * 0.6
-    end
-
-    if GotBuff(source, "itemphantomdancerdebuff") > 0 then
-      amount = amount * 0.88
     end
 
     if GetItemSlot(target, 1054) > 0 then
