@@ -9,7 +9,7 @@ Full function:
 getdmg("SKILL",target,myHero,stagedmg,spelllvl)
 ]]
 
-DamageLibVersion = 0.04
+DamageLibVersion = 0.05
 
 _G.Ignite = (GetCastName(myHero, SUMMONER_1):lower():find("summonerdot") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("summonerdot") and SUMMONER_2 or nil))
 _G.Smite = (GetCastName(myHero, SUMMONER_1):lower():find("smite") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("smite") and SUMMONER_2 or nil))
@@ -469,7 +469,7 @@ local DamageLibTable = {
 
   ["Kayle"] = {
     {Slot = "Q", DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210, 260})[level] + source.totalDamage + 0.6 * GetBonusAP(source) end},
-    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return ({20, 30, 40, 50, 60})[level] + 0.25 * GetBonusAP(source) end},
+    {Slot = "E", DamageType = 2, Damage = function(source, target, level) return GotBuff(source, "judicatorrighteousfury") > 0 and ({20, 30, 40, 50, 60})[level] + 0.30 * GetBonusAP(source) or ({10, 15, 20, 25, 30})[level] + 0.15 * GetBonusAP(source) end},
   },
 
   ["Kennen"] = {
