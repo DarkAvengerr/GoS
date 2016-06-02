@@ -4,8 +4,6 @@ require('Inspired')
 require('DeftLib')
 require('DamageLib')
 
-AutoUpdate("/D3ftsu/GoS/master/Chogath.lua","/D3ftsu/GoS/master/Chogath.version","Chogath.lua",8)
-
 local ChogathMenu = MenuConfig("Chogath", "Chogath")
 ChogathMenu:Menu("Combo", "Combo")
 ChogathMenu.Combo:Boolean("Q", "Use Q", true)
