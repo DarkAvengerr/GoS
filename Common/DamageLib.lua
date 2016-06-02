@@ -260,8 +260,8 @@ local DamageLibTable = {
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.4 * GetBonusAP(source) end},
     {Slot = "W", Stage = 1, DamageType = 2, Stage = 2, Damage = function(source, target, level) return ({30, 45, 60, 75, 90})[level] + (1.5 * source.totalDamage) + 0.2 * GetBonusAP(source) end},
     {Slot = "E", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({20, 32, 44, 56, 68})[level] + 0.4 * source.totalDamage end},
-    {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({100, 130, 160})[level] + 0.3 * GetBonusAP(source) + ({20, 50, 80})[level] / 100 * source.totalDamage end},
-    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({150, 195, 240})[level] + 0.45 * GetBonusAP(source) + ({30, 75, 120})[level] / 100 * source.totalDamage end},
+    {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({100, 130, 160})[level] + 0.3 * GetBonusAP(source) + ({0.2, 0.6, 1})[level] * source.totalDamage end},
+    {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({150, 195, 240})[level] + 0.45 * GetBonusAP(source) + ({0.3, 0.75, 1.2})[level] * source.totalDamage end},
   },
 
   ["Darius"] = {
@@ -288,11 +288,11 @@ local DamageLibTable = {
   },
 
   ["Ekko"] = {
-    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 75, 90, 105, 120})[level] + 0.1 * GetBonusAP(source) end},
-    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({60, 85, 110, 135, 160})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 75, 90, 105, 120})[level] + 0.2 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({40, 65, 90, 115, 140})[level] + 0.6 * GetBonusAP(source) end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({150, 195, 240, 285, 330})[level] + 0.8 * GetBonusAP(source) end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({50, 80, 110, 140, 170})[level] + 0.2 * GetBonusAP(source) end},
-    {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({200, 350, 500})[level] + 1.3 * GetBonusAP(source) end}
+    {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({150, 300, 450})[level] + 1.5 * GetBonusAP(source) end}
   },
 
   ["Elise"] = {
@@ -503,9 +503,9 @@ local DamageLibTable = {
   },
 
   ["Kindred"] = {
-    {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + source.totalDamage * 0.2 end},
+    {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({55, 75, 95, 115, 135})[level] + source.totalDamage * 0.2 end},
     {Slot = "W", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({25, 30, 35, 40, 45})[level] + source.totalDamage * 0.4 end},
-    {Slot = "E", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({80, 110, 140, 170, 200})[level] + source.totalDamage * 0.2 + GetMaxHP(target) * 0.05 end},
+    {Slot = "E", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({40, 75, 110, 145, 180})[level] + source.totalDamage * 0.2 + GetMaxHP(target) * 0.05 end},
   },
 
   ["LeBlanc"] = {
@@ -537,7 +537,7 @@ local DamageLibTable = {
   },
 
   ["Lucian"] = {
-    {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({80, 110, 140, 170, 200})[level] + ({60, 75, 90, 105, 120})[level] / 100 * source.totalDamage end},
+    {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({80, 110, 140, 170, 200})[level] + ({0.6, 0.7, 0.8, 0.9, 1})[level] * source.totalDamage end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 100, 140, 180, 220})[level] + 0.9 * GetBonusAP(source) end},
     {Slot = "R", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({40, 50, 60})[level] + 0.1 * GetBonusAP(source) + 0.25 * source.totalDamage end},
   },
@@ -724,7 +724,7 @@ local DamageLibTable = {
   },
 
   ["Ryze"] = {
-    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 85, 110, 135, 160})[level] + 0.55 * GetBonusAP(source) + ({2, 2.5, 3, 3.5, 4})[level] / 100 * GetMaxMana(source) end},
+    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.55 * GetBonusAP(source) + ({2, 2.5, 3, 3.5, 4})[level] / 100 * GetMaxMana(source) end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 100, 120, 140, 160})[level] + 0.4 * GetBonusAP(source) + 0.025 * GetMaxMana(source) end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({36, 52, 68, 84, 100})[level] + 0.2 * GetBonusAP(source) + 0.02 * GetMaxMana(source) end},
   },
@@ -793,7 +793,7 @@ local DamageLibTable = {
   },
 
   ["Swain"] = {
-    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({25, 40, 55, 70, 85})[level] + 0.3 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({30, 47.5, 65, 82.5, 100})[level] + 0.3 * GetBonusAP(source) end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.7 * GetBonusAP(source) end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({50, 80, 110, 140, 170})[level] * GetBonusAP(source) end},
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({50, 70, 90})[level] + 0.2 * GetBonusAP(source) end},
@@ -814,8 +814,8 @@ local DamageLibTable = {
   },
 
   ["Taliyah"] = {
-    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 80, 100, 120, 140})[level] + 0.4 * GetBonusAP(source) end},
-    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({180, 240, 300, 360, 420})[level] + 1.2 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return (GetObjectType(target) == Obj_AI_Minion and 1.5 or 1) * ({60, 80, 100, 120, 140})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return (GetObjectType(target) == Obj_AI_Minion and 1.5 or 1) * ({180, 240, 300, 360, 420})[level] + 1.2 * GetBonusAP(source) end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 80, 100, 120, 140})[level] + 0.4 * GetBonusAP(source) end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 105, 130, 155, 180})[level] + 0.4 * GetBonusAP(source) end},
     {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({160, 210, 260, 310, 360})[level] + 0.8 * GetBonusAP(source) end},
@@ -911,7 +911,7 @@ local DamageLibTable = {
     {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.6 * GetBonusAP(source) end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({30, 50, 70, 90, 110})[level] + ({45, 75, 105, 135, 165})[level] + 0.4 * GetBonusAP(source) end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({70, 100, 130, 160, 190})[level] + 0.3 * GetBonusAP(source) end},
-    {Slot = "R", Stage = 1, DamageType = 3, Damage = function(source, target, level) return (GotBuff(target, "velkozresearchedstack") > 0 and ({500, 725, 950})[level] + 1.25* GetBonusAP(source) or CalcMagicalDamage(source, target, ({500, 725, 950})[level] + 1.25 * GetBonusAP(source))) end},
+    {Slot = "R", Stage = 1, DamageType = 3, Damage = function(source, target, level) return (GotBuff(target, "velkozresearchedstack") > 0 and ({450, 625, 800})[level] + 1.25* GetBonusAP(source) or CalcMagicalDamage(source, target, ({450, 625, 800})[level] + 1.25 * GetBonusAP(source))) end},
   },
 
   ["Vi"] = {
@@ -981,7 +981,7 @@ local DamageLibTable = {
   },
 
   ["Zed"] = {
-    {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({75, 115, 155, 195, 235})[level] + source.totalDamage end},
+    {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({70, 105, 140, 175, 210})[level] + source.totalDamage end},
     {Slot = "E", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.8 * source.totalDamage end},
     {Slot = "R", Stage = 1, DamageType = 1, Damage = function(source, target, level) return source.totalDamage end},
   },
