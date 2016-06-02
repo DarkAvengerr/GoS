@@ -4,8 +4,6 @@ require('Inspired')
 require('DeftLib')
 require('DamageLib')
 
-AutoUpdate("/D3ftsu/GoS/master/Xerath.lua","/D3ftsu/GoS/master/Xerath.version","Xerath.lua",7)
-
 local XerathMenu = MenuConfig("Xerath", "Xerath")
 XerathMenu:Menu("Combo", "Combo")
 XerathMenu.Combo:Boolean("Q", "Use Q", true)
