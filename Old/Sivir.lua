@@ -4,8 +4,6 @@ require('Inspired')
 require('DeftLib')
 require('DamageLib')
 
-AutoUpdate("/D3ftsu/GoS/master/Sivir.lua","/D3ftsu/GoS/master/Sivir.version","Sivir.lua",3)
-
 local SivirMenu = MenuConfig("Sivir", "Sivir")
 SivirMenu:Menu("Combo", "Combo")
 SivirMenu.Combo:Boolean("Q", "Use Q", true)
