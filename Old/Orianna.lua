@@ -4,8 +4,6 @@ require('Inspired')
 require('DeftLib')
 require('DamageLib')
 
-AutoUpdate("/D3ftsu/GoS/master/Orianna.lua","/D3ftsu/GoS/master/Orianna.version","Orianna.lua",4)
-
 local Ball = myHero
 	
 local OriannaMenu = MenuConfig("Orianna", "Orianna")
