@@ -4,8 +4,6 @@ require('Inspired')
 require('DeftLib')
 require('DamageLib')
 
-AutoUpdate("/D3ftsu/GoS/master/Lucian.lua","/D3ftsu/GoS/master/Lucian.version","Lucian.lua",6)
-
 local LucianMenu = MenuConfig("Lucian", "Lucian")
 LucianMenu:Menu("Combo", "Combo")
 LucianMenu.Combo:Boolean("Q", "Use Q", true)
