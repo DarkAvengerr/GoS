@@ -4,8 +4,6 @@ require('Inspired')
 require('DeftLib')
 require('DamageLib')
 
-AutoUpdate("/D3ftsu/GoS/master/Twitch.lua","/D3ftsu/GoS/master/Twitch.version","Twitch.lua",10)
-
 local TwitchMenu = MenuConfig("Twitch", "Twitch")
 TwitchMenu:Menu("Combo", "Combo")
 TwitchMenu.Combo:Boolean("Q", "Use Q", true)
