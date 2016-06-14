@@ -46,7 +46,7 @@ function ChallengerBaseult:__init()
   PermaShow(self.BaseultMenu.Baseult)
   if GetObjectName(myHero) == "Jinx" or GetObjectName(myHero) == "Ashe" then
     self.BaseultMenu:Boolean("Collision", "Check for collision", true)
-  elseif GetObjectName(myHero) == "Ezreal" or GetObjectName(myHero) == "Draven" then
+  else
     self.BaseultMenu:Boolean("Collision", "Check for collision", false)
   end
   self.Delay = self.SpellData[GetObjectName(myHero)].Delay
