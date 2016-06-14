@@ -1,4 +1,4 @@
-ChallengerBaseultVersion     = "0.09"
+ChallengerBaseultVersion     = "0.1"
 
 function ChallengerBaseultUpdaterino(data)
   if tonumber(data) > tonumber(ChallengerBaseultVersion) then
@@ -65,11 +65,9 @@ function ChallengerBaseult:ObjectLoad(Object)
 end
 
 function ChallengerBaseult:CreateObj(Object)
-  DelayAction(function()
   if GetObjectType(Object) == Obj_AI_SpawnPoint and GetTeam(Object) ~= GetTeam(myHero) then
     self.enemySpawnPos = Object
   end
-  end, 0)
 end
 
 function ChallengerBaseult:Tick()
