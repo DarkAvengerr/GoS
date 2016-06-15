@@ -80,13 +80,13 @@ function ChallengerBaseult:Tick()
     for i, recall in pairs(self.Recalling) do
       local dmg = self.Damage(recall.champ)
       if dmg >= GetCurrentHP(recall.champ) and self.enemySpawnPos ~= nil then
-        local RemainingTime = recall.duration - (GetGameTimer() - recall.start) + GetLatency() / 2000
+        local TimeToRecall = recall.duration - (GetGameTimer() - recall.start) + GetLatency() / 2000
         local BaseDistance = GetDistance(self.enemySpawnPos)
         if GetObjectName(myHero) == "Jinx" then
           self.MissileSpeed = BaseDistance > 1350 and (2295000 + (BaseDistance - 1350) * 2200) / BaseDistance or 1700
         end
         local TimeToHit = self.Delay + BaseDistance / self.MissileSpeed + GetLatency() / 2000
-        if RemainingTime < TimeToHit and TimeToHit < 7.8 and TimeToHit - RemainingTime < 1.5 and dmg >= GetCurrentHP(recall.champ) and self.BaseultMenu.Baseult:Value() and not self.BaseultMenu.PanicKey:Value() then
+        if TimeToRecall < TimeToHit and TimeToHit < 7.8 and TimeToHit - TimeToRecall < 1.5 and dmg >= GetCurrentHP(recall.champ) and self.BaseultMenu.Baseult:Value() and not self.BaseultMenu.PanicKey:Value() then
           if self.BaseultMenu.Collision:Value() then
             if self:Collision(recall.champ) == 0 then
               CastSkillShot(_R, GetOrigin(self.enemySpawnPos))
@@ -102,13 +102,12 @@ end
 
 function ChallengerBaseult:ProcessRecall(unit,recall)
   if GetTeam(unit) ~= GetTeam(myHero) then 
-    if recall.isStart == true then
+    if recall.isStart then
       table.insert(self.Recalling, {champ = unit, start = GetGameTimer(), duration = (recall.totalTime/1000)})
     else
       for i, recall in pairs(self.Recalling) do
         if recall.champ == unit then
           table.remove(self.Recalling, i)
-          return
         end
       end
     end
@@ -118,9 +117,9 @@ end
 function ChallengerBaseult:Collision(unit)
   local count = 0
   for i, enemy in pairs(GetEnemyHeroes()) do
-    if enemy ~= nil and IsObjectAlive(enemy) and GetNetworkID(unit) ~= GetNetworkID(enemy) and self.enemySpawnPos ~= nil then
+    if enemy and IsObjectAlive(enemy) and GetNetworkID(unit) ~= GetNetworkID(enemy) and self.enemySpawnPos ~= nil then
       local pointSegment, pointLine, isOnSegment = VectorPointProjectionOnLineSegment(GetOrigin(myHero), GetOrigin(self.enemySpawnPos), GetOrigin(enemy))
-      if isOnSegment and GetDistanceSqr(pointSegment, GetOrigin(enemy)) < (60+enemy.boundingRadius)^2 and GetDistanceSqr(GetOrigin(myHero), GetOrigin(self.enemySpawnPos)) > GetDistanceSqr(GetOrigin(myHero), GetOrigin(enemy)) then
+      if isOnSegment and GetDistanceSqr(pointSegment, GetOrigin(enemy)) < (60+GetHitBox(enemy))^2 and GetDistanceSqr(GetOrigin(myHero), GetOrigin(self.enemySpawnPos)) > GetDistanceSqr(GetOrigin(myHero), GetOrigin(enemy)) then
         count = count + 1
       end
     end
