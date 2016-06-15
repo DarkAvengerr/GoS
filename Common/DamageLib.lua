@@ -1,3 +1,5 @@
+if DamageLibVersion then return end
+
 --[[
 It's designed to calculate the damage of the skills to champions, although most of the calculations work for creeps.
 -------------------------------------------------------
