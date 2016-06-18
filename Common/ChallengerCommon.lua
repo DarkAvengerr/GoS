@@ -354,7 +354,7 @@ end
 
 function ChallengerTargetSelector:Draw()
   if (self.Menu and self.Menu.TargetSelector.FocusTargetSettings.FocusSelected:Value() or self.focusSelected) and self:ValidTarget(self.SelectedTarget) then
-  	DrawCircle(GetOrigin(self.SelectedTarget), 150, 2, 20, ARGB(255,255,0,0))
+    DrawCircle(GetOrigin(self.SelectedTarget), 150, 2, 20, ARGB(255,255,0,0))
   end
 end
 
