@@ -219,7 +219,7 @@ function ChallengerObjectManager:__init()
     sorting = sorting ~= nil and sorting or function(a,b) return false end
 
     for _,v in pairs(self.objects) do
-      if GetObjectType(v) == objtype and condition(v) then
+      if (not objtype or GetObjectType(v) == objtype) and condition(v) then
         retTable[#retTable+1] = v
       end
     end
@@ -329,6 +329,7 @@ function ChallengerTargetSelector:__init(range, damageType, includeShields, from
     self.Menu.TargetSelector:Menu("FocusTargetSettings", "Focus Target Settings")
     self.Menu.TargetSelector.FocusTargetSettings:Boolean("FocusSelected", "Focus Selected Target", true)
     self.Menu.TargetSelector.FocusTargetSettings:Boolean("ForceFocusSelected", "Attack Only Selected Target", false)
+    OnLoad(function() 
     self.Menu.TargetSelector:Boolean("AutoPriority", "Auto Arrange Priorities", false, function(var) 
   	  if var then
         for i, enemy in pairs(GetEnemyHeroes()) do
@@ -339,6 +340,7 @@ function ChallengerTargetSelector:__init(range, damageType, includeShields, from
     for i, enemy in pairs(GetEnemyHeroes()) do
   	  self.Menu.TargetSelector:Slider("TargetSelector" ..GetObjectName(enemy).. "Priority", GetObjectName(enemy), self.Menu.TargetSelector.AutoPriority:Value() and self:GetDBPriority(GetObjectName(enemy)) or 1, 1, 5, 1)
     end
+    end)
     self.Menu.TargetSelector:DropDown("TargetingMode", "Target Mode", 1, {"Auto Priority", "Less Attack", "Less Cast", "Lowest HP", "Most AD", "Most AP", "Closest", "Closest to Mouse"})
   end
   self.SortMode = function() return self.Menu and self.Menu.TargetSelector.TargetingMode:Value() or 1 end
@@ -354,7 +356,7 @@ end
 
 function ChallengerTargetSelector:Draw()
   if (self.Menu and self.Menu.TargetSelector.FocusTargetSettings.FocusSelected:Value() or self.focusSelected) and self:ValidTarget(self.SelectedTarget) then
-    DrawCircle(GetOrigin(self.SelectedTarget), 150, 2, 20, ARGB(255,255,0,0))
+  	DrawCircle(GetOrigin(self.SelectedTarget), 150, 2, 20, ARGB(255,255,0,0))
   end
 end
 
@@ -423,19 +425,68 @@ function ChallengerTargetSelector:GetTarget()
   return #targets > 0 and targets[1] or nil
 end
 
+class "ChallengerBuffManager"
+
+function ChallengerBuffManager:__init()
+  self.buffs = {[GetNetworkID(myHero)] = {}}
+  for i = 0, 64 do
+    if GetBuffExpireTime(myHero, i) > GetGameTimer() then
+      self.buffs[GetNetworkID(myHero)][GetBuffName(myHero,i)] = {valid = true, count = GetBuffCount(myHero,i), stacks = GetBuffStacks(myHero,i), type = GetBuffType(myHero,i), startT = GetBuffStartTime(myHero,i), endT = GetBuffExpireTime(myHero,i)}
+    end
+  end
+  for k = 1, heroManager.iCount do
+    local unit = heroManager:GetHero(k)
+    self.buffs[GetNetworkID(unit)] = {}
+    for i = 0, 64 do
+      if GetBuffExpireTime(unit, i) > GetGameTimer() then
+        self.buffs[GetNetworkID(unit)][GetBuffName(unit,i)] = {valid = true, count = GetBuffCount(unit,i), stacks = GetBuffStacks(unit,i), type = GetBuffType(unit,i), startT = GetBuffStartTime(unit,i), endT = GetBuffExpireTime(unit,i)}
+      end
+    end
+  end
+  self.GotBuff = function(unit,buffname)
+    for i, buff in pairs(self.buffs[GetNetworkID(unit)]) do
+      if i == buffname then 
+      	return buff.count
+      end
+    end
+    return 0
+  end
+  self.HasBuffType = function(unit, type)
+  	for i, buff in pairs(self.buffs[GetNetworkID(unit)]) do
+      if buff.type == type then 
+      	return true
+      end
+    end
+    return false
+  end
+  Callback.Add("UpdateBuff", function(unit, buff) self:UpdateBuff(unit,buff) end)
+  Callback.Add("RemoveBuff", function(unit, buff) self:RemoveBuff(unit,buff) end)
+end
+
+function ChallengerBuffManager:UpdateBuff(unit, buff)
+  if GetObjectType(unit) ~= Obj_AI_Hero then return end
+  if not self.buffs[GetNetworkID(unit)] then self.buffs[GetNetworkID(unit)] = {} end
+  self.buffs[GetNetworkID(unit)][buff.Name] = {valid = true, count = buff.Count, stacks = buff.Stacks, type = buff.Type, startT = buff.StartTime, endT = buff.ExpireTime}
+end
+
+function ChallengerBuffManager:RemoveBuff(unit, buff)
+  if GetObjectType(unit) ~= Obj_AI_Hero then return end
+  self.buffs[GetNetworkID(unit)][buff.Name] = nil
+end
+
 class "ChallengerCommon"
 
 function ChallengerCommon:__init()
-  self.GetVersion = function() return "0.01 Alpha" end
-  self.version = "0.01"
+  self.version = "0.02"
   require('DamageLib')
   require('OpenPredict')
+  self.ObjectManager = ChallengerObjectManager()
   self.AntiGapcloser = ChallengerAntiGapcloser
   self.Interrupter = ChallengerInterrupter
   self.TargetSelector = ChallengerTargetSelector
-  self.ObjectManager = ChallengerObjectManager()
+  self.BuffManager = ChallengerBuffManager()
   _G.SpellSlot = {Q = 0, W = 1, E = 2, R = 3, Summoner1 = 4, Summoner2 = 5, Item1 = 6, Item2 = 7, Item3 = 8, Item4 = 9, Item5 = 10, Item6 = 11, Trinket = 12, Recall = 13, OathSworn = 92, Interact = 94, Internal = 10000}
-  _G.Game = {MapID = GetMapID(), PrintChat = function(str) return print(str) end, Version = GetGameVersion(), Ping = GetLatency(), Mode = "Running", CursorPos = GetMousePos(), CursorPos2D = GetCursorPos(), Time = GetGameTimer()}
+  _G.Game = {MapID = GetMapID(), PrintChat = function(str) print(str) end, Version = GetGameVersion(), Ping = function() return GetLatency() end, CursorPos = function() return GetMousePos() end, CursorPos2D = function() return GetCursorPos() end, Time = function() return GetGameTimer() end}
 end
 
 ChallengerCommon = ChallengerCommon()
