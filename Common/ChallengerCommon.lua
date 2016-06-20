@@ -428,7 +428,7 @@ end
 class "ChallengerCommon"
 
 function ChallengerCommon:__init()
-  self.version = "0.02"
+  self.version = "0.01"
   require('DamageLib')
   require('OpenPredict')
   self.ObjectManager = ChallengerObjectManager()
