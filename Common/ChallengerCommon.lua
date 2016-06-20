@@ -58,7 +58,7 @@ function ChallengerAntiGapcloser:__init(menu, func)
     ["YasuoDashWrapper"]               = {Name = "Yasuo",        spellname = "E | Sweeping Blade"},
     ["blindmonkqtwo"]                  = {Name = "LeeSin",       spellname = "Q | Resonating Strike"},
     ["khazixelong"]                    = {Name = "Khazix",       spellname = "E | Leap"},
-    ["reksaieburrowed"]                = {Name = "RekSai",       spellname = "W | Burrow"},
+    ["reksaieburrowed"]                = {Name = "RekSai",       spellname = "E | Tunnel"},
     ["slashCast"]                      = {Name = "Tryndamere",   spellname = "E | Spinning Slash"}
   }
   if menu then
@@ -307,7 +307,7 @@ function ChallengerTargetSelector:__init(range, damageType, includeShields, from
     end
     return false
   end
-  self.CalcDamage = function(target, damageType, value) return damageType == 1 and CalcPhysicalDamage(myHero, target, value) or CalcMagicalDamage(myHero, target, value) end
+  self.CalcDamage = function(target, DamageType, value) return DamageType == 1 and CalcPhysicalDamage(myHero, target, value) or CalcMagicalDamage(myHero, target, value) end
   self.IsValidTarget = function(target, range, damageType, includeShields, from)
     local includeShields = includeShields or false
     return self:ValidTarget(target) and GetDistanceSqr(GetOrigin(target), from or GetOrigin(myHero)) < math.pow(range <= 0 and (GetRange(myHero)+GetHitBox(myHero)+GetHitBox(target)) or range, 2) and not self.IsInvulnerable(target, damageType, includeShields)
@@ -343,7 +343,6 @@ function ChallengerTargetSelector:__init(range, damageType, includeShields, from
     end)
     self.Menu.TargetSelector:DropDown("TargetingMode", "Target Mode", 1, {"Auto Priority", "Less Attack", "Less Cast", "Lowest HP", "Most AD", "Most AP", "Closest", "Closest to Mouse"})
   end
-  self.SortMode = function() return self.Menu and self.Menu.TargetSelector.TargetingMode:Value() or 1 end
   Callback.Add("WndMsg", function(msg, key) self:WndMsg(msg, key) end)
   if isOrb then Callback.Add("Draw", function() self:Draw() end) end
 end
@@ -366,7 +365,7 @@ function ChallengerTargetSelector:WndMsg(msg, key)
     for i, enemy in pairs(GetEnemyHeroes()) do
       if self:ValidTarget(enemy) then
         local distance2 = GetDistanceSqr(enemy, GetMousePos())
-        if distance2 < distance and distance2 < GetHitBox(enemy)^2.5 then
+        if distance2 < distance and distance2 < GetHitBox(enemy)^2.25 then
           target = enemy
           distance = distance2
         else
@@ -418,9 +417,10 @@ function ChallengerTargetSelector:GetTarget()
   local targets = {}
   for i, enemy in pairs(GetEnemyHeroes()) do
   	if self.IsValidTarget(enemy, self.range, self.damageType, self.includeShields, self.from) then
-  	  targets[#targets+1] = enemy
+  	  table.insert(targets, enemy)
   	end
   end
+  self.SortMode = self.Menu and self.Menu.TargetSelector.TargetingMode:Value() or 1 
   table.sort(targets, self.sorting[self.SortMode])
   return #targets > 0 and targets[1] or nil
 end
