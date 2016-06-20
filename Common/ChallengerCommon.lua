@@ -209,73 +209,6 @@ function ChallengerInterrupter:Tick()
   end
 end
 
-class "ChallengerObjectManager"
-
-function ChallengerObjectManager:__init()
-  self.objects = {}
-  self.Get = function(objtype, condition, sorting)
-    local retTable = {}
-    condition = condition ~= nil and condition or function(a) return true end
-    sorting = sorting ~= nil and sorting or function(a,b) return false end
-
-    for _,v in pairs(self.objects) do
-      if (not objtype or GetObjectType(v) == objtype) and condition(v) then
-        retTable[#retTable+1] = v
-      end
-    end
-
-    for i=1, #retTable-1 do
-      for j=i+1, #retTable do
-        if sorting(retTable[j], retTable[i]) then
-          local bbl = retTable[i]
-          retTable[i] = retTable[j]
-          retTable[j] = bbl
-        end
-      end
-    end
-
-    return #retTable ~= 0 and retTable[1] or nil
-  end
-  self.GetList = function(objtype, condition, sorting)
-    local retTable = {}
-    condition = condition ~= nil and condition or function(a) return true end
-    sorting = sorting ~= nil and sorting or function(a,b) return false end
-
-    for _,v in pairs(self.objects) do
-      if GetObjectType(v) == objtype and condition(v) then
-        retTable[#retTable+1] = v
-      end
-    end
-
-    for i=1, #retTable-1 do
-      for j=i+1, #retTable do
-        if sorting(retTable[j], retTable[i]) then
-          local bbl = retTable[i]
-          retTable[i] = retTable[j]
-          retTable[j] = bbl
-        end
-      end
-    end
-
-    return #retTable ~= 0 and retTable or nil
-  end
-  Callback.Add("ObjectLoad", function(obj) self:CreateObj(obj) end)
-  Callback.Add("CreateObj", function(obj) self:CreateObj(obj) end)
-  Callback.Add("DeleteObj", function(obj) self:DeleteObj(obj) end)
-end
-
-function ChallengerObjectManager:CreateObj(obj)
-  table.insert(self.objects, obj)
-end
-
-function ChallengerObjectManager:DeleteObj(obj)
-  for i, object in pairs(self.objects) do
-  	if GetNetworkID(obj) == GetNetworkID(object) then
-  	  table.remove(self.objects, i)
-  	end
-  end
-end
-
 MODE_AUTO = 1
 MODE_LESSATTACK = 2
 MODE_LESSCAST = 3
@@ -431,7 +364,6 @@ function ChallengerCommon:__init()
   self.version = "0.01"
   require('DamageLib')
   require('OpenPredict')
-  self.ObjectManager = ChallengerObjectManager()
   self.AntiGapcloser = ChallengerAntiGapcloser
   self.Interrupter = ChallengerInterrupter
   self.TargetSelector = ChallengerTargetSelector
