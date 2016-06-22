@@ -11,7 +11,7 @@ Full function:
 getdmg("SKILL",target,myHero,stagedmg,spelllvl)
 ]]
 
-DamageLibVersion = 0.06
+DamageLibVersion = 0.07
 
 _G.Ignite = (GetCastName(myHero, SUMMONER_1):lower():find("summonerdot") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("summonerdot") and SUMMONER_2 or nil))
 _G.Smite = (GetCastName(myHero, SUMMONER_1):lower():find("smite") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("smite") and SUMMONER_2 or nil))
@@ -747,7 +747,8 @@ local DamageLibTable = {
   },
 
   ["Shen"] = {
-    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 100, 140, 180, 220})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) local dmg = (({3, 3.5, 4, 4.5, 5})[level] + 0.015 * GetBonusAP(source)) * GetMaxHP(target) / 100; if GetObjectType(target) == Obj_AI_Hero then return dmg end; return math.min(({30, 50, 70, 90, 110})[level]+dmg, ({75, 100, 125, 150, 175})[level]) end},
+    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) local dmg = (({5, 5.5, 6, 6.6, 7})[level] + 0.02 * GetBonusAP(source)) * GetMaxHP(target) / 100; if GetObjectType(target) == Obj_AI_Hero then return dmg end; return math.min(({30, 50, 70, 90, 110})[level]+dmg, ({75, 100, 125, 150, 175})[level]) end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({50, 85, 120, 155, 190})[level] + 0.5 * GetBonusAP(source) end},
   },
 
@@ -803,8 +804,8 @@ local DamageLibTable = {
 
   ["Syndra"] = {
     {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({50, 95, 140, 185, 230})[level] + 0.75 * GetBonusAP(source) end},
-    {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.75 * GetBonusAP(source) end},
-    {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.8 * GetBonusAP(source) end},
+    {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.5 * GetBonusAP(source) end},
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({270, 405, 540})[level] + 0.6 * GetBonusAP(source) end},
     {Slot = "R", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({90, 135, 180})[level] + 0.2 * GetBonusAP(source) end},
   },
