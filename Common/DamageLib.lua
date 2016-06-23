@@ -1,5 +1,15 @@
 if DamageLibVersion then return end
 
+DamageLibVersion = "0.08"
+
+if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
+  function(data)
+    if tonumber(data) > tonumber(DamageLibVersion) then
+      DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.lua", COMMON_PATH .. "DamageLib.lua", function() print("Updated DamageLib For "..GetGameVersion():sub(1,4)..", Please press F6 twice to reload.") return end)
+    end
+  end) 
+end
+
 --[[
 It's designed to calculate the damage of the skills to champions, although most of the calculations work for creeps.
 -------------------------------------------------------
@@ -10,8 +20,6 @@ local damage = getdmg("R",target,source,3)
 Full function:
 getdmg("SKILL",target,myHero,stagedmg,spelllvl)
 ]]
-
-DamageLibVersion = 0.07
 
 _G.Ignite = (GetCastName(myHero, SUMMONER_1):lower():find("summonerdot") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("summonerdot") and SUMMONER_2 or nil))
 _G.Smite = (GetCastName(myHero, SUMMONER_1):lower():find("smite") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("smite") and SUMMONER_2 or nil))
