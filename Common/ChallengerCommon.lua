@@ -1,3 +1,13 @@
+if ChallengerCommonLoaded then return end
+
+if not FileExist(COMMON_PATH.."DamageLib.lua") then
+  DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.lua", COMMON_PATH .. "DamageLib.lua", function() print("Downloaded DamageLib, Please press F6 twice to reload.") return end)
+end
+
+if not FileExist(COMMON_PATH.."OpenPredict.lua") then
+  DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/OpenPredict.lua", COMMON_PATH .. "OpenPredict.lua", function() print("Downloaded OpenPredict, Please press F6 twice to reload.") return end)
+end
+
 class "ChallengerAntiGapcloser"
 
 function ChallengerAntiGapcloser:__init(menu, func)
@@ -217,7 +227,6 @@ MODE_MOSTAD = 5
 MODE_MOSTAP = 6
 MODE_CLOSEST = 7
 MODE_NEARMOUSE = 8
-MODE_MOSTSTACK = 9
 DAMAGETYPE_PHYSICAL = 1
 DAMAGETYPE_MAGICAL = 2
 
@@ -263,13 +272,13 @@ function ChallengerTargetSelector:__init(range, damageType, includeShields, from
     self.Menu.TargetSelector.FocusTargetSettings:Boolean("FocusSelected", "Focus Selected Target", true)
     self.Menu.TargetSelector.FocusTargetSettings:Boolean("ForceFocusSelected", "Attack Only Selected Target", false)
     OnLoad(function() 
-    self.Menu.TargetSelector:Boolean("AutoPriority", "Auto Arrange Priorities", false, function(var) 
+    self.Menu.TargetSelector:Boolean("AutoPriority", "Auto Arrange Priorities", true, function(var) 
   	  if var then
         for i, enemy in pairs(GetEnemyHeroes()) do
   	      self.Menu.TargetSelector["TargetSelector" ..GetObjectName(enemy).. "Priority"]:Value(self:GetDBPriority(GetObjectName(enemy)))
         end
       end
-    end, true)
+    end)
     for i, enemy in pairs(GetEnemyHeroes()) do
   	  self.Menu.TargetSelector:Slider("TargetSelector" ..GetObjectName(enemy).. "Priority", GetObjectName(enemy), self.Menu.TargetSelector.AutoPriority:Value() and self:GetDBPriority(GetObjectName(enemy)) or 1, 1, 5, 1)
     end
@@ -358,17 +367,128 @@ function ChallengerTargetSelector:GetTarget()
   return #targets > 0 and targets[1] or nil
 end
 
+class "ChallengerOneTickOneAction"
+
+function ChallengerOneTickOneAction:__init(func, id)
+  self.functions = {}
+  self.lastTickT = 0
+  self.lastTickF = 0
+  if self.lastTickF == 0 then
+    Callback.Add("Tick", function() self:Execute() end)
+  end
+  if id then
+    self.functions[id] = func
+  else
+    table.insert(self.functions, func)
+  end
+end
+
+function ChallengerOneTickOneAction:RemoveTick(id)
+  self.functions[id] = nil
+end
+
+function ChallengerOneTickOneAction:Execute()
+  if self.lastTickT + 0.03 < os.clock() then
+    local f, fI = self:IndexFunctions()
+    self.lastTickF = self.lastTickF + 1
+    if self.lastTickF > f then 
+      self.lastTickF = 1 
+    end
+    if fI[self.lastTickF] then fI[self.lastTickF]() end
+    self.lastTickT = os.clock()
+  end 
+end
+
+function ChallengerOneTickOneAction:IndexFunctions()
+  local f = 0
+  local fI = {}
+  for _, func in pairs(self.functions) do
+    f = f + 1
+    fI[f] = func
+  end
+  return f, fI
+end
+
+SORT_HEALTH_ASC = function(a, b) return a.health < b.health end
+SORT_HEALTH_DEC = function(a, b) return a.health > b.health end
+SORT_MAXHEALTH_ASC = function(a, b) return a.maxHealth < b.maxHealth end
+SORT_MAXHEALTH_DEC = function(a, b) return a.maxHealth > b.maxHealth end
+TEAM_ALL = "All"
+TEAM_ENEMY = "Enemy"
+TEAM_ALLY = "Ally"
+TEAM_JUNGLE = "Jungle"
+
+class "MinionManager"
+
+function MinionManager:__init(mode, range, from, sort)
+  self.mode = mode
+  self.range = range
+  self.from = from
+  self.sort = type(sort) == "function" and sort
+  self.objects = {}
+  self.minionTable = {
+    All = {},
+    Ally = {},
+    Enemy = {},
+    Jungle = {}
+  }
+
+  Callback.Add("ObjectLoad", function(Object) self:CreateObj(Object) end)
+  Callback.Add("CreateObj", function(Object) self:CreateObj(Object) end)
+  Callback.Add("Tick", function() self:update() end)
+end
+
+function MinionManager:CreateObj(Object)
+  if GetObjectType(Object) == Obj_AI_Minion and not IsDead(Object) and (GetObjectBaseName(Object):find("Minion_") or GetTeam(Object) == 300) then
+    table.insert(self.minionTable["All"], Object)
+    if GetTeam(Object) == MINION_ENEMY then
+      table.insert(self.minionTable["Enemy"], Object)
+    elseif GetTeam(Object) == MINION_ALLY then
+      table.insert(self.minionTable["Ally"], Object)
+    else
+      table.insert(self.minionTable["Jungle"], Object)
+    end
+  end
+end
+
+function MinionManager:DeleteObj(Object)
+  for _, object in pairs(self.minionTable) do
+    if object == Object then
+      table.remove(self.minionTable, _)
+    end
+  end
+end
+
+function MinionManager:update()
+  self.objects = {}
+
+  for _, object in pairs(self.minionTable[self.mode]) do
+    if not IsDead(object) and GetDistance(object) <= self.range then
+      table.insert(self.objects, object)
+    end
+  end
+
+  if self.sort then 
+    table.sort(self.objects, self.sort) 
+  end
+end
+
 class "ChallengerCommon"
 
 function ChallengerCommon:__init()
-  self.version = "0.01"
-  require('DamageLib')
-  require('OpenPredict')
+  self.version = "0.03"
+  require("DamageLib")
+  require("OpenPredict")
   self.AntiGapcloser = ChallengerAntiGapcloser
   self.Interrupter = ChallengerInterrupter
   self.TargetSelector = ChallengerTargetSelector
+  self.OneTickOneAction = ChallengerOneTickOneAction
+  self.MinionManager = ChallengerMinionManager
+  --self.Orbwalker = ChallengerOrbwalker()
+  --self.Prediction = ChallengerPrediction()
   _G.SpellSlot = {Q = 0, W = 1, E = 2, R = 3, Summoner1 = 4, Summoner2 = 5, Item1 = 6, Item2 = 7, Item3 = 8, Item4 = 9, Item5 = 10, Item6 = 11, Trinket = 12, Recall = 13, OathSworn = 92, Interact = 94, Internal = 10000}
   _G.Game = {MapID = GetMapID(), PrintChat = function(str) print(str) end, Version = GetGameVersion(), Ping = function() return GetLatency() end, CursorPos = function() return GetMousePos() end, CursorPos2D = function() return GetCursorPos() end, Time = function() return GetGameTimer() end}
+  _G.ChallengerCommonLoaded = true
 end
 
 ChallengerCommon = ChallengerCommon()
