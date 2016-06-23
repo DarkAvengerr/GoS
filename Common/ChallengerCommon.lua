@@ -1,5 +1,15 @@
 if ChallengerCommonLoaded then return end
 
+ChallengerCommonVersion = "0.03"
+  
+if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
+  function(data)
+    if tonumber(data) > tonumber(ChallengerCommonVersion) then
+      DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.lua", COMMON_PATH .. "ChallengerCommon.lua", function() print("Updated ChallengerCommon, Please press F6 twice to reload.") return end)
+    end
+  end) 
+end
+
 if not FileExist(COMMON_PATH.."DamageLib.lua") then
   DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.lua", COMMON_PATH .. "DamageLib.lua", function() print("Downloaded DamageLib, Please press F6 twice to reload.") return end)
 end
@@ -476,7 +486,6 @@ end
 class "ChallengerCommon"
 
 function ChallengerCommon:__init()
-  self.version = "0.03"
   require("DamageLib")
   require("OpenPredict")
   self.AntiGapcloser = ChallengerAntiGapcloser
