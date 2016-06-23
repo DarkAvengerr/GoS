@@ -483,21 +483,12 @@ function MinionManager:update()
   end
 end
 
-class "ChallengerCommon"
-
-function ChallengerCommon:__init()
-  require("DamageLib")
-  require("OpenPredict")
-  self.AntiGapcloser = ChallengerAntiGapcloser
-  self.Interrupter = ChallengerInterrupter
-  self.TargetSelector = ChallengerTargetSelector
-  self.OneTickOneAction = ChallengerOneTickOneAction
-  self.MinionManager = ChallengerMinionManager
-  --self.Orbwalker = ChallengerOrbwalker()
-  --self.Prediction = ChallengerPrediction()
-  _G.SpellSlot = {Q = 0, W = 1, E = 2, R = 3, Summoner1 = 4, Summoner2 = 5, Item1 = 6, Item2 = 7, Item3 = 8, Item4 = 9, Item5 = 10, Item6 = 11, Trinket = 12, Recall = 13, OathSworn = 92, Interact = 94, Internal = 10000}
-  _G.Game = {MapID = GetMapID(), PrintChat = function(str) print(str) end, Version = GetGameVersion(), Ping = function() return GetLatency() end, CursorPos = function() return GetMousePos() end, CursorPos2D = function() return GetCursorPos() end, Time = function() return GetGameTimer() end}
-  _G.ChallengerCommonLoaded = true
-end
-
-ChallengerCommon = ChallengerCommon()
+require("DamageLib")
+require("OpenPredict")
+_G.ChallengerCommon = {AntiGapcloser = ChallengerAntiGapcloser, Interrupter = ChallengerInterrupter, TargetSelector = ChallengerTargetSelector, OneTickOneAction = ChallengerOneTickOneAction, MinionManager = ChallengerMinionManager
+  --Orbwalker = ChallengerOrbwalker()
+  --Prediction = ChallengerPrediction()
+}
+_G.ChallengerCommonLoaded = true
+_G.SpellSlot = {Q = 0, W = 1, E = 2, R = 3, Summoner1 = 4, Summoner2 = 5, Item1 = 6, Item2 = 7, Item3 = 8, Item4 = 9, Item5 = 10, Item6 = 11, Trinket = 12, Recall = 13, OathSworn = 92, Interact = 94, Internal = 10000}
+_G.Game = {MapID = GetMapID(), PrintChat = function(str) print(str) end, Version = GetGameVersion(), Ping = function() return GetLatency() end, CursorPos = function() return GetMousePos() end, CursorPos2D = function() return GetCursorPos() end, Time = function() return GetGameTimer() end}
