@@ -1,6 +1,6 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = "0.03"
+ChallengerCommonVersion = "0.04"
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -419,10 +419,10 @@ function ChallengerOneTickOneAction:IndexFunctions()
   return f, fI
 end
 
-SORT_HEALTH_ASC = function(a, b) return a.health < b.health end
-SORT_HEALTH_DEC = function(a, b) return a.health > b.health end
-SORT_MAXHEALTH_ASC = function(a, b) return a.maxHealth < b.maxHealth end
-SORT_MAXHEALTH_DEC = function(a, b) return a.maxHealth > b.maxHealth end
+SORT_HEALTH_ASC = function(a, b) return GetCurrentHP(a) < GetCurrentHP(b) end
+SORT_HEALTH_DEC = function(a, b) return GetCurrentHP(a) > GetCurrentHP(b) end
+SORT_MAXHEALTH_ASC = function(a, b) return GetMaxHP(a) < GetMaxHP(b) end
+SORT_MAXHEALTH_DEC = function(a, b) return GetMaxHP(a) > GetMaxHP(b) end
 TEAM_ALL = "All"
 TEAM_ENEMY = "Enemy"
 TEAM_ALLY = "Ally"
