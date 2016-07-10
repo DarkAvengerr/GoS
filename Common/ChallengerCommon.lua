@@ -1,6 +1,6 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = "0.04"
+ChallengerCommonVersion = "0.05"
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -242,12 +242,13 @@ DAMAGETYPE_MAGICAL = 2
 
 class "ChallengerTargetSelector"
 
-function ChallengerTargetSelector:__init(range, damageType, includeShields, from, focusSelected, menu, isOrb)
+function ChallengerTargetSelector:__init(range, damageType, includeShields, from, focusSelected, menu, isOrb, mode)
   self.range = range or -1
   self.damageType = damageType or 1
   self.includeShields = includeShields or false
   self.from = from
   self.focusSelected = focusSelected or false
+  self.Mode = mode or 1
   self.IsInvulnerable = function(target, damageType, includeShields)
     if GotBuff(target, "kindredrnodeathbuff") > 0 and GetPercentHP(target) <= 10 then
       return true
@@ -372,7 +373,7 @@ function ChallengerTargetSelector:GetTarget()
   	  table.insert(targets, enemy)
   	end
   end
-  self.SortMode = self.Menu and self.Menu.TargetSelector.TargetingMode:Value() or 1 
+  self.SortMode = self.Menu and self.Menu.TargetSelector.TargetingMode:Value() or self.Mode 
   table.sort(targets, self.sorting[self.SortMode])
   return #targets > 0 and targets[1] or nil
 end
