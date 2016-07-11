@@ -1,6 +1,6 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = "0.05"
+ChallengerCommonVersion = "0.06"
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -429,9 +429,9 @@ TEAM_ENEMY = "Enemy"
 TEAM_ALLY = "Ally"
 TEAM_JUNGLE = "Jungle"
 
-class "MinionManager"
+class "ChallengerMinionManager"
 
-function MinionManager:__init(mode, range, from, sort)
+function ChallengerMinionManager:__init(mode, range, from, sort)
   self.mode = mode
   self.range = range
   self.from = from
@@ -446,10 +446,10 @@ function MinionManager:__init(mode, range, from, sort)
 
   Callback.Add("ObjectLoad", function(Object) self:CreateObj(Object) end)
   Callback.Add("CreateObj", function(Object) self:CreateObj(Object) end)
-  Callback.Add("Tick", function() self:update() end)
+  self:update()
 end
 
-function MinionManager:CreateObj(Object)
+function ChallengerMinionManager:CreateObj(Object)
   if GetObjectType(Object) == Obj_AI_Minion and not IsDead(Object) and (GetObjectBaseName(Object):find("Minion_") or GetTeam(Object) == 300) then
     table.insert(self.minionTable["All"], Object)
     if GetTeam(Object) == MINION_ENEMY then
@@ -462,7 +462,7 @@ function MinionManager:CreateObj(Object)
   end
 end
 
-function MinionManager:DeleteObj(Object)
+function ChallengerMinionManager:DeleteObj(Object)
   for _, object in pairs(self.minionTable) do
     if object == Object then
       table.remove(self.minionTable, _)
@@ -470,7 +470,7 @@ function MinionManager:DeleteObj(Object)
   end
 end
 
-function MinionManager:update()
+function ChallengerMinionManager:update()
   self.objects = {}
 
   for _, object in pairs(self.minionTable[self.mode]) do
