@@ -1,6 +1,6 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = "0.06"
+ChallengerCommonVersion = "0.07"
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -373,51 +373,9 @@ function ChallengerTargetSelector:GetTarget()
   	  table.insert(targets, enemy)
   	end
   end
-  self.SortMode = self.Menu and self.Menu.TargetSelector.TargetingMode:Value() or self.Mode 
+  self.SortMode = self.Mode or (self.Menu and self.Menu.TargetSelector.TargetingMode:Value() or 1)
   table.sort(targets, self.sorting[self.SortMode])
   return #targets > 0 and targets[1] or nil
-end
-
-class "ChallengerOneTickOneAction"
-
-function ChallengerOneTickOneAction:__init(func, id)
-  self.functions = {}
-  self.lastTickT = 0
-  self.lastTickF = 0
-  if self.lastTickF == 0 then
-    Callback.Add("Tick", function() self:Execute() end)
-  end
-  if id then
-    self.functions[id] = func
-  else
-    table.insert(self.functions, func)
-  end
-end
-
-function ChallengerOneTickOneAction:RemoveTick(id)
-  self.functions[id] = nil
-end
-
-function ChallengerOneTickOneAction:Execute()
-  if self.lastTickT + 0.03 < os.clock() then
-    local f, fI = self:IndexFunctions()
-    self.lastTickF = self.lastTickF + 1
-    if self.lastTickF > f then 
-      self.lastTickF = 1 
-    end
-    if fI[self.lastTickF] then fI[self.lastTickF]() end
-    self.lastTickT = os.clock()
-  end 
-end
-
-function ChallengerOneTickOneAction:IndexFunctions()
-  local f = 0
-  local fI = {}
-  for _, func in pairs(self.functions) do
-    f = f + 1
-    fI[f] = func
-  end
-  return f, fI
 end
 
 SORT_HEALTH_ASC = function(a, b) return GetCurrentHP(a) < GetCurrentHP(b) end
@@ -486,7 +444,7 @@ end
 
 require("DamageLib")
 require("OpenPredict")
-_G.ChallengerCommon = {AntiGapcloser = ChallengerAntiGapcloser, Interrupter = ChallengerInterrupter, TargetSelector = ChallengerTargetSelector, OneTickOneAction = ChallengerOneTickOneAction, MinionManager = ChallengerMinionManager
+_G.ChallengerCommon = {AntiGapcloser = ChallengerAntiGapcloser, Interrupter = ChallengerInterrupter, TargetSelector = ChallengerTargetSelector, MinionManager = ChallengerMinionManager
   --Orbwalker = ChallengerOrbwalker()
   --Prediction = ChallengerPrediction()
 }
