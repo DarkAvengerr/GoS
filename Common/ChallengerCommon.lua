@@ -1,6 +1,6 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = "0.07"
+ChallengerCommonVersion = "0.08"
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -408,7 +408,7 @@ function ChallengerMinionManager:__init(mode, range, from, sort)
 end
 
 function ChallengerMinionManager:CreateObj(Object)
-  if GetObjectType(Object) == Obj_AI_Minion and not IsDead(Object) and (GetObjectBaseName(Object):find("Minion_") or GetTeam(Object) == 300) then
+  if GetObjectType(Object) == Obj_AI_Minion and not IsDead(Object) and (GetObjectName(Object):find("Minion") or GetTeam(Object) == 300) then
     table.insert(self.minionTable["All"], Object)
     if GetTeam(Object) == MINION_ENEMY then
       table.insert(self.minionTable["Enemy"], Object)
