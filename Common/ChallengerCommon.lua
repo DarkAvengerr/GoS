@@ -1,6 +1,6 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = "0.08"
+ChallengerCommonVersion = "0.09"
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -404,6 +404,7 @@ function ChallengerMinionManager:__init(mode, range, from, sort)
 
   Callback.Add("ObjectLoad", function(Object) self:CreateObj(Object) end)
   Callback.Add("CreateObj", function(Object) self:CreateObj(Object) end)
+  Callback.Add("DeleteObj", function(Object) self:DeleteObj(Object) end)
   self:update()
 end
 
