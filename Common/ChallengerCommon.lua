@@ -1,6 +1,6 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = "0.09"
+ChallengerCommonVersion = "0.1"
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -103,8 +103,8 @@ function ChallengerAntiGapcloser:AddToMenu(menu)
   self.Menu:Menu("AntiGapcloser", "Anti-Gapcloser")
   self.Menu.AntiGapcloser:Boolean("Enabled", "Enabled", true)
   for i, spells in pairs(self.spells) do
-    if table.contains(EnemyNames, spells.charName) then
-      self.Menu.AntiGapcloser:Boolean(i, spells.charName.." - "..spells.spellname, true)
+    if table.contains(EnemyNames, spells.Name) then
+      self.Menu.AntiGapcloser:Boolean(i, spells.Name.." - "..spells.spellname, true)
       SpellAdded = true
     end
   end
@@ -195,8 +195,8 @@ function ChallengerInterrupter:AddToMenu(menu)
   self.Menu:Menu("Interrupter","Interrupter")
   self.Menu.Interrupter:Boolean("Enabled", "Enabled", true)
   for i, spells in pairs(self.spells) do
-    if table.contains(EnemyNames, spells.charName) then
-      self.Menu.Interrupter:Boolean(i, spells.charName.." - "..spells.spellname, true)
+    if table.contains(EnemyNames, spells.Name) then
+      self.Menu.Interrupter:Boolean(i, spells.Name.." - "..spells.spellname, true)
       SpellAdded = true
     end
   end
