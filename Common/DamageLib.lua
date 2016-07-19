@@ -286,7 +286,7 @@ local DamageLibTable = {
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({100, 160, 220})[level] + 0.6 * GetBonusAP(source) end},
   },
 
-  ["Drmundo"] = {
+  ["DrMundo"] = {
     {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) if GetObjectType(target) == Obj_AI_Minion then return math.min(({300, 350, 400, 450, 500})[level],math.max(({80, 130, 180, 230, 280})[level], ({15, 17.5, 20, 22.5, 25})[level] / 100 * GetCurrentHP(target))) end; return math.max(({80, 130, 180, 230, 280})[level],({15, 17.5, 20, 22.5, 25})[level] / 100 * GetCurrentHP(target)) end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({35, 50, 65, 80, 95})[level] + 0.2 * GetBonusAP(source) end}
   },
@@ -348,7 +348,7 @@ local DamageLibTable = {
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({360, 540, 720})[level] + GetBonusAP(source) end},
   },
 
-  ["GangPlank"] = {
+  ["Gangplank"] = {
     {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({20, 45, 70, 95, 120})[level] + source.totalDamage end},
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({50, 70, 90})[level] + 0.1 * GetBonusAP(source) end},
   },
@@ -518,7 +518,7 @@ local DamageLibTable = {
     {Slot = "E", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({40, 75, 110, 145, 180})[level] + source.totalDamage * 0.2 + GetMaxHP(target) * 0.05 end},
   },
 
-  ["LeBlanc"] = {
+  ["Leblanc"] = {
     {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({55, 80, 105, 130, 155})[level] + 0.4 * GetBonusAP(source) end},
     {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({55, 80, 105, 130, 155})[level] + 0.4 * GetBonusAP(source) end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({85, 125, 165, 205, 245})[level] + 0.6 * GetBonusAP(source) end},
