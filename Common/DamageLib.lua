@@ -68,7 +68,7 @@ function CalcPhysicalDamage(source, target, amount)
   else
     value = 100 / (100 + (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat)
   end
-  return DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 1)
+  return math.max(0, DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 1))
 end
 
 function CalcMagicalDamage(source, target, amount)
@@ -82,7 +82,7 @@ function CalcMagicalDamage(source, target, amount)
   else
     value = 100 / (100 + (mr * GetMagicPenPercent(source)) - GetMagicPenFlat(source))
   end
-  return DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 2)
+  return math.max(0, DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 2))
 end
 
 function DamageReductionMod(source,target,amount,DamageType)
@@ -258,7 +258,7 @@ local DamageLibTable = {
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.5 * GetBonusAP(source) end},
   },
 
-  ["ChoGath"] = {
+  ["Chogath"] = {
     {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 135, 190, 245, 305})[level] + GetBonusAP(source) end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({75, 125, 175, 225, 275})[level] + 0.7 * GetBonusAP(source) end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({20, 35, 50, 65, 80})[level] + 0.3 * GetBonusAP(source) end},
@@ -286,7 +286,7 @@ local DamageLibTable = {
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({100, 160, 220})[level] + 0.6 * GetBonusAP(source) end},
   },
 
-  ["DrMundo"] = {
+  ["Drmundo"] = {
     {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) if GetObjectType(target) == Obj_AI_Minion then return math.min(({300, 350, 400, 450, 500})[level],math.max(({80, 130, 180, 230, 280})[level], ({15, 17.5, 20, 22.5, 25})[level] / 100 * GetCurrentHP(target))) end; return math.max(({80, 130, 180, 230, 280})[level],({15, 17.5, 20, 22.5, 25})[level] / 100 * GetCurrentHP(target)) end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({35, 50, 65, 80, 95})[level] + 0.2 * GetBonusAP(source) end}
   },
@@ -499,7 +499,7 @@ local DamageLibTable = {
     {Slot = "E", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({65, 100, 135, 170, 205})[level] + 0.2 * source.totalDamage end},
   },
 
-  ["KogMaw"] = {
+  ["Kogmaw"] = {
     {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 130, 180, 230, 280})[level] + 0.5 * GetBonusAP(source) end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) local dmg = (0.02 + (0.01*(GetBonusAP(source)) * 0.75)) * GetMaxHP(target) ; if GetObjectType(target) == Obj_AI_Minion and dmg > 100 then dmg = 100 end ; return dmg end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210, 260})[level] + 0.7 * GetBonusAP(source) end},
