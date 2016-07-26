@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = "0.11"
+DamageLibVersion = "0.12"
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -101,10 +101,6 @@ function DamageReductionMod(source,target,amount,DamageType)
 
     if GotBuff(target, "Tantrum") > 0 and DamageType == 1 then
       amount = amount - ({2, 4, 6, 8, 10})[GetCastLevel(target, _E)]
-    end
-
-    if GotBuff(target, "BraumShieldRaise") > 0 then
-      amount = amount - amount * ({0.3, 0.325, 0.35, 0.375, 0.4})[GetCastLevel(target, _E)]
     end
 
     if GotBuff(target, "GalioIdolOfDurand") > 0 then
@@ -241,7 +237,7 @@ local DamageLibTable = {
   },
 
   ["Braum"] = {
-    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({70, 115, 160, 205, 250})[level] + 0.025 * GetMaxHP(source) end},
+    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 105, 150, 195, 240})[level] + 0.025 * GetMaxHP(source) end},
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + 0.6 * GetBonusAP(source) end},
   },
 
@@ -384,7 +380,7 @@ local DamageLibTable = {
   },
 
   ["Hecarim"] = {
-    {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({60, 95, 130, 165, 200})[level] + 0.6 * source.totalDamage end},
+    {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({50, 85, 120, 155, 190})[level] + 0.6 * source.totalDamage end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({20, 30, 40, 50, 60})[level] + 0.2 * GetBonusAP(source) end},
     {Slot = "E", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({40, 75, 110, 145, 180})[level] + 0.5 * source.totalDamage end},
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({150, 250, 350})[level] + GetBonusAP(source) end},
@@ -460,7 +456,7 @@ local DamageLibTable = {
   },
 
   ["Kassadin"] = {
-    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({70, 95, 120, 145, 170})[level] + 0.7 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({65, 95, 125, 155, 185})[level] + 0.7 * GetBonusAP(source) end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({40, 65, 90, 115, 140})[level] + 0.6 * GetBonusAP(source) end},
     {Slot = "W", Stage = 2, DamageType = 2, Damage = function(source, target, level) return 20 + 0.1 * GetBonusAP(source) end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 105, 130, 155, 180})[level] + 0.7 * GetBonusAP(source) end},
@@ -641,8 +637,8 @@ local DamageLibTable = {
   },
 
   ["Nidalee"] = {
-    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 77.5, 95, 112.5, 130})[level] + 0.4 * GetBonusAP(source) end},
-    {Slot = "QM", Stage = 2, DamageType = 2, Damage = function(source, target, level) local dmg = (({4, 20, 50, 90})[GetCastLevel(source, _R)] + 0.36 * GetBonusAP(source) + 0.75 * source.totalDamage) * ((GetMaxHP(target) - GetCurrentHP(target)) / GetMaxHP(target) * 1.5 + 1) ; dmg = dmg * (GotBuff(target, "nidaleepassivehunted") > 0 and 1.33 or 1); return dmg end},
+    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({70, 85, 100, 115, 130})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "QM", Stage = 2, DamageType = 2, Damage = function(source, target, level) local dmg = (({5, 30, 55, 80})[GetCastLevel(source, _R)] + 0.4 * GetBonusAP(source) + 0.75 * source.totalDamage) * ((GetMaxHP(target) - GetCurrentHP(target)) / GetMaxHP(target) * 1.5 + 1) dmg = dmg * (GotBuff(target, "nidaleepassivehunted") > 0 and 1.4 or 1) return dmg end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({40, 80, 120, 160, 200})[level] + 0.2 * GetBonusAP(source) end},
     {Slot = "W", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210})[GetCastLevel(source, _R)] + 0.3 * GetBonusAP(source) end},
     {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({70, 130, 190, 250})[GetCastLevel(source, _R)] + 0.45 * GetBonusAP(source) end},
@@ -708,7 +704,7 @@ local DamageLibTable = {
     {Slot = "W", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({10, 30, 50, 70, 90})[level] + 1.5 * source.totalDamage * 1.5 end},
     {Slot = "E", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({30, 60, 90, 120, 150})[level] + 0.9 * source.totalDamage end},
     {Slot = "E", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({30, 60, 90, 120, 150})[level] + 0.9 * source.totalDamage * 1.5 end},
-    {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({30, 60, 120})[level] + 0.1 * GetBonusAP(source) end},
+    {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({40, 80, 120})[level] + 0.1 * GetBonusAP(source) end},
   },
 
   ["Rengar"] = {
@@ -1009,7 +1005,7 @@ local DamageLibTable = {
   },
 
   ["Zyra"] = {
-    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] + 0.55 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 95, 130, 165, 200})[level] + 0.6 * GetBonusAP(source) end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 95, 130, 165, 200})[level] + 0.5 * GetBonusAP(source) end},
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({180, 265, 350})[level] + 0.7 * GetBonusAP(source) end},
   }
