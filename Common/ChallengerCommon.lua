@@ -1,6 +1,6 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = "0.1"
+ChallengerCommonVersion = "0.11"
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -79,7 +79,7 @@ function ChallengerAntiGapcloser:__init(menu, func)
     ["blindmonkqtwo"]                  = {Name = "LeeSin",       spellname = "Q | Resonating Strike"},
     ["khazixelong"]                    = {Name = "Khazix",       spellname = "E | Leap"},
     ["reksaieburrowed"]                = {Name = "RekSai",       spellname = "E | Tunnel"},
-    ["slashCast"]                      = {Name = "Tryndamere",   spellname = "E | Spinning Slash"}
+    ["TryndamereE"]                    = {Name = "Tryndamere",   spellname = "E | Spinning Slash"}
   }
   if menu then
     self:AddToMenu(menu)
