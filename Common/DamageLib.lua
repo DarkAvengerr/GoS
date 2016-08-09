@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = "0.12"
+DamageLibVersion = "0.13"
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -397,7 +397,7 @@ local DamageLibTable = {
     {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({20, 50, 80, 110, 140})[level] + 1.2 * source.totalDamage end},
     {Slot = "W", Stage = 1, DamageType = 3, Damage = function(source, target, level) return ({15, 30, 45, 60, 75})[level] end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160, 200, 240})[level] + 0.5 * GetBonusAP(source) end},
-    {Slot = "R", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({80, 120, 160})[level] + 0.5 * GetBonusAP(source) + 0.6 * source.totalDamage end},
+    {Slot = "R", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({80, 120, 160})[level] + 0.5 * GetBonusAP(source) + 0.7 * source.totalDamage end},
   },
 
   ["Janna"] = {
