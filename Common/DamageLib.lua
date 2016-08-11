@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = "0.13"
+DamageLibVersion = "0.14"
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -42,8 +42,8 @@ function CalcPhysicalDamage(source, target, amount)
   local BonusArmorPen = source.bonusArmorPenPercent
 
   if GetObjectType(source) == Obj_AI_Minion or GetObjectType(source) == Obj_AI_Turret then
-    ArmorPenPercent = 0
-    ArmorPenFlat = 1
+    ArmorPenPercent = 1
+    ArmorPenFlat = 0
     BonusArmorPen = 1
   end
 
