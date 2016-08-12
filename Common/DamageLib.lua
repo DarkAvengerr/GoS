@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = "0.15"
+DamageLibVersion = "0.16"
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -46,9 +46,13 @@ function CalcPhysicalDamage(source, target, amount)
     ArmorPenFlat = 0
     BonusArmorPen = 1
   elseif GetObjectType(source) == Obj_AI_Turret then
-    ArmorPenPercent = .7
     ArmorPenFlat = 0
     BonusArmorPen = 1
+    if GetObjectName(source):find("3") or GetObjectName(source):find("4") then
+      ArmorPenPercent = .7
+    else
+      ArmorPenPercent = 0.25
+    end
   end
 
   if GetObjectType(source) == Obj_AI_Turret then
