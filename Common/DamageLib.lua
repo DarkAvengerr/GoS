@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = "0.16"
+DamageLibVersion = "0.17"
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -76,7 +76,7 @@ function CalcPhysicalDamage(source, target, amount)
   else
     value = 100 / (100 + (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat)
   end
-  return math.max(0, DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 1))
+  return math.max(0, math.floor(DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 1)))
 end
 
 function CalcMagicalDamage(source, target, amount)
@@ -90,11 +90,25 @@ function CalcMagicalDamage(source, target, amount)
   else
     value = 100 / (100 + (mr * GetMagicPenPercent(source)) - GetMagicPenFlat(source))
   end
-  return math.max(0, DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 2))
+  return math.max(0, math.floor(DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 2)))
 end
 
 function DamageReductionMod(source,target,amount,DamageType)
-  if GetObjectType(source) == Obj_AI_Hero then
+  if GetObjectType(source) == Obj_AI_Hero and target then
+    
+    local BoSCount = GotBuff(target, "MasteryWardenOfTheDawn")
+    if BoSCount > 0 then
+      amount = amount * (1 - (0.06 * BoSCount))
+    end
+
+    if GotBuff(target, "BraumShieldRaise") > 0 then
+      amount = amount * (1 - ({0.3, 0.325, 0.35, 0.375, 0.4})[GetCastLevel(target, _E)])
+    end
+
+    if GotBuff(target, "urgotswapdef") > 0 then
+      amount = amount * (1 - ({0.3, 0.4, 0.5})[GetCastLevel(target, _R)])
+    end
+
     if GotBuff(source, "Exhaust") > 0 then
       amount = amount * 0.6
     end
@@ -146,7 +160,7 @@ function DamageReductionMod(source,target,amount,DamageType)
   return amount
 end
 
-function PassivePercentMod(source, target, amount)
+function PassivePercentMod(source, target, amount, damageType)
   local SiegeMinionList = {"Red_Minion_MechCannon", "Blue_Minion_MechCannon"}
   local NormalMinionList = {"Red_Minion_Wizard", "Blue_Minion_Wizard", "Red_Minion_Basic", "Blue_Minion_Basic"}
 
@@ -155,6 +169,13 @@ function PassivePercentMod(source, target, amount)
       amount = amount * 0.7
     elseif table.contains(NormalMinionList, GetObjectName(target)) then
       amount = amount * 1.14285714285714
+    end
+  end
+  if GetObjectType(source) == Obj_AI_Hero then -- Masteries Feretorix(tm)
+    if GetObjectType(target) == Obj_AI_Hero then
+      if (GetItemSlot(source, 3036) > 0 or GetItemSlot(source, 3034) > 0) and GetMaxHP(source) < GetMaxHP(target) and damageType == 1 then
+        amount = amount * (1 + math.min(GetMaxHP(target) - GetMaxHP(source), 500) / 50 * (GetItemSlot(source, 3036) > 0 and 0.015 or 0.01))
+      end
     end
   end
   return amount
