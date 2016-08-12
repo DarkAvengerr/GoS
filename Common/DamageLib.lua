@@ -49,9 +49,9 @@ function CalcPhysicalDamage(source, target, amount)
     ArmorPenFlat = 0
     BonusArmorPen = 1
     if GetObjectName(source):find("3") or GetObjectName(source):find("4") then
-      ArmorPenPercent = .7
-    else
       ArmorPenPercent = 0.25
+    else
+      ArmorPenPercent = 0.7
     end
   end
 
