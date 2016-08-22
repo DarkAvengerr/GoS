@@ -29,7 +29,7 @@ function ChallengerHumanizer:LoadMenu()
 end
 
 function ChallengerHumanizer:IssueOrder(order)
-  if order.flag == 2 and self:Orbwalking() and self.ChallengerHumanizerMenu.EnabledMH:Value() and (_G.CE ~= nil and not _G.CE.IsEvading) then
+  if order.flag == 2 and self:Orbwalking() and self.ChallengerHumanizerMenu.EnabledMH:Value() and (_G.CE ~= nil and not _G.CE.IsEvading()) then
     if self.MovementHumanizerTick >= (GetTickCount() - self.LastMove) then
       BlockOrder()
       self.BlockedMovements = self.BlockedMovements + 1
