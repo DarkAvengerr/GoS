@@ -1073,6 +1073,9 @@ function getdmg(spell,target,source,stage,level)
       end
     end
   end
+  if spell == "AA" then
+    return CalcPhysicalDamage(source, target, source.totalDamage)
+  end
   if spell == "IGNITE" then
     if Ignite then
       return 50+20*GetLevel(source) - (GetHPRegen(target)*3)
