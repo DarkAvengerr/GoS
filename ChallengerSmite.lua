@@ -28,11 +28,11 @@ function ChallengerSmite:__init()
       {RealName = "Rift Herald", ObjectName = "SRU_RiftHerald"},
       {RealName = "Blue Sentinel", ObjectName = "SRU_Blue"},
       {RealName = "Red Brambleback", ObjectName = "SRU_Red"},
-      {RealName = "Water Dragon", ObjectName = "SRU_Dragon_Water" },
-      {RealName = "Fire Dragon", ObjectName = "SRU_Dragon_Fire" },
-      {RealName = "Earth Dragon", ObjectName = "SRU_Dragon_Earth" },
-      {RealName = "Air Dragon", ObjectName = "SRU_Dragon_Air" },
-      {RealName = "Elder Dragon", ObjectName = "SRU_Dragon_Elder" },
+      {RealName = "Water Dragon", ObjectName = "SRU_Dragon_Water"},
+      {RealName = "Fire Dragon", ObjectName = "SRU_Dragon_Fire"},
+      {RealName = "Earth Dragon", ObjectName = "SRU_Dragon_Earth"},
+      {RealName = "Air Dragon", ObjectName = "SRU_Dragon_Air"},
+      {RealName = "Elder Dragon", ObjectName = "SRU_Dragon_Elder"},
       {RealName = "Crimson Raptor", ObjectName = "SRU_Razorbeak", DisabledByDefault = true},
       {RealName = "Greater Murk Wolf", ObjectName = "SRU_Murkwolf", DisabledByDefault = true},
       {RealName = "Gromp", ObjectName = "SRU_Gromp", DisabledByDefault = true},
@@ -101,7 +101,7 @@ end
 
 function ChallengerSmite:LoadMenu()
   self.Menu = MenuConfig("ChallengerSmite", "Challenger Smite")
-  self.Menu:KeyBinding("Enabled", "Enabled", string.byte("M"), true, function() end, true)
+  self.Menu:KeyBinding("Enabled", "Enabled", string.byte("M"))
   self.Menu:KeyBinding("Combo", "Combo Key", 32)
   self.Menu:Boolean("Charge", "Save 1 Charge For Jungle", true)
   self.Menu:Menu("SpellSmite", "Spell Smite")
