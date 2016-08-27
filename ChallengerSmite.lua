@@ -17,7 +17,7 @@ class "ChallengerSmite"
 function ChallengerSmite:__init()
   self.Smite = GetCastName(myHero, 4):lower():find("smite") and 4 or (GetCastName(myHero, 5):lower():find("smite") and 5 or nil)
   if not self.Smite then PrintChat("<b><font color='#EE2EC'>Challenger Smite - </font></b> <font color='#ff0000'> Smite Not Found !</font>") return end
-  if mapID ~= SUMMONERS_RIFT or mapID ~= TWISTED_TREELINE then PrintChat("<b><font color='#EE2EC'>Challenger Smite - </font></b> <font color='#ff0000'> Map Not Supported !</font>") return end
+  if mapID ~= SUMMONERS_RIFT and mapID ~= TWISTED_TREELINE then PrintChat("<b><font color='#EE2EC'>Challenger Smite - </font></b> <font color='#ff0000'> Map Not Supported !</font>") return end
   PrintChat("<b><font color='#EE2EC'>Challenger Smite - </font></b> Loaded v" ..ChallengerSmiteVersion)
   require("DamageLib")
   self.Spells = {}
@@ -148,7 +148,7 @@ end
 function ChallengerSmite:Loop()
   if IsDead(myHero) or not self.Menu.Enabled:Value() then return end
   for i, mob in pairs(self.MobManager) do
-    if ValidTarge(mob, 500+GetHitBox(myHero)) and self.Menu.Camps[GetObjectName(mob)]:Value() then
+    if ValidTarget(mob, 500+GetHitBox(myHero)) and GotBuff(mob, "kindredrnodeathbuff") == 0 and self.Menu.Camps[GetObjectName(mob)]:Value() then
       if self.Menu.SpellSmite.Enabled:Value() then
         self:SpellSmite(mob)
       end
@@ -158,7 +158,7 @@ function ChallengerSmite:Loop()
     end
   end
   for i, enemy in pairs(GetEnemyHeroes()) do
-    if self.Menu.Smote[GetObjectName(enemy)]:Value() ~= 1 and (not self.Menu.Charge:Value() or GetSpellData(myHero, self.Smite).ammo == 2) and ValidTarget(enemy, 570) then
+    if self.Menu.Smote[GetObjectName(enemy)]:Value() ~= 1 and (not self.Menu.Charge:Value() or GetSpellData(myHero, self.Smite).ammo == 2) and ValidTarget(enemy, 570) and GotBuff(enemy, "kindredrnodeathbuff") == 0 then
       if self.Menu.Smote[GetObjectName(enemy)]:Value() == 2 and self.Menu.Combo:Value() and (GetCastName(myHero, self.Smite) == "s5_summonersmiteplayerganker" or GetCastName(myHero, self.Smite) == "s5_summonersmiteduel") then
         CastTargetSpell(enemy, self.Smite)
       else
