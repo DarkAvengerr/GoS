@@ -15,7 +15,7 @@ local spellstr = {[0] = "Q", [1] = "W", [2] = "E", [3] = "R"}
 class "ChallengerSmite"
 
 function ChallengerSmite:__init()
-  self.Smite = GetCastName(myHero, 4):lower():find("flash") and 4 or (GetCastName(myHero, 5):lower():find("flash") and 5 or nil)
+  self.Smite = GetCastName(myHero, 4):lower():find("smite") and 4 or (GetCastName(myHero, 5):lower():find("smite") and 5 or nil)
   if not self.Smite then PrintChat("<b><font color='#EE2EC'>Challenger Smite - </font></b> <font color='#ff0000'> Smite Not Found !</font>") return end
   if mapID ~= SUMMONERS_RIFT or mapID ~= TWISTED_TREELINE then PrintChat("<b><font color='#EE2EC'>Challenger Smite - </font></b> <font color='#ff0000'> Map Not Supported !</font>") return end
   PrintChat("<b><font color='#EE2EC'>Challenger Smite - </font></b> Loaded v" ..ChallengerSmiteVersion)
