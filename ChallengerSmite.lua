@@ -48,9 +48,9 @@ function ChallengerSmite:__init()
   }
   self:LoadSpellData()
   self:LoadMenu()
-  Callbacattack.Add("Draw", function() self:Loop() self:Draw() end)
-  Callbacattack.Add("CreateObj", function(Object) self:CreateObj(Object) end)
-  Callbacattack.Add("DeleteObj", function(Object) self:DeleteObj(Object) end)
+  Callback.Add("Draw", function() self:Loop() self:Draw() end)
+  Callback.Add("CreateObj", function(Object) self:CreateObj(Object) end)
+  Callback.Add("DeleteObj", function(Object) self:DeleteObj(Object) end)
 end
 
 function ChallengerSmite:LoadSpellData()
