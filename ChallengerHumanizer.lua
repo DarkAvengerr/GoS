@@ -1,4 +1,4 @@
-ChallengerHumanizerVersion     = 0.1
+ChallengerHumanizerVersion     = 0.11
 
 class "ChallengerHumanizer"
 
@@ -67,7 +67,7 @@ end
 function ChallengerHumanizer:Mode() 
   if IOW_Loaded then 
     return IOW:Mode() 
-  elseif DAC_Loaded then  
+  elseif DAC then  
     return DAC:Mode() 
   elseif PW_Loaded then 
     return PW:Mode() 
