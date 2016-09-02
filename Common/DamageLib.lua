@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = "0.18"
+DamageLibVersion = "0.19"
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -939,8 +939,8 @@ local DamageLibTable = {
   },
 
   ["Veigar"] = {
-    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 125, 170, 215, 260})[level] + 0.6 * GetBonusAP(source) end},
-    {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({120, 170, 220, 270, 320})[level] + GetBonusAP(source) end},
+    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 0.6 * GetBonusAP(source) end},
+    {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({100, 150, 200, 250, 300})[level] + GetBonusAP(source) end},
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) local dmg = GetPercentHP(target) > 33.3 and ({175, 250, 325})[level] + 0.75 * GetBonusAP(source) or ({350, 500, 650})[level] + 1.5 * GetBonusAP(source); return dmg+((0.015 * dmg) * (100 - ((GetCurrentHP(target) / GetMaxHP(target)) * 100))) end},
   },
 
