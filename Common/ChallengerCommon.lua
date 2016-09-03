@@ -1,10 +1,10 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = "0.11"
+ChallengerCommonVersion = 0.12
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
-    if tonumber(data) > tonumber(ChallengerCommonVersion) then
+    if tonumber(data) > ChallengerCommonVersion then
       DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.lua", COMMON_PATH .. "ChallengerCommon.lua", function() print("Updated ChallengerCommon, Please press F6 twice to reload.") return end)
     end
   end) 
@@ -104,7 +104,7 @@ function ChallengerAntiGapcloser:AddToMenu(menu)
   self.Menu.AntiGapcloser:Boolean("Enabled", "Enabled", true)
   for i, spells in pairs(self.spells) do
     if table.contains(EnemyNames, spells.Name) then
-      self.Menu.AntiGapcloser:Boolean(i, spells.Name.." - "..spells.spellname, true)
+      self.Menu.AntiGapcloser:Boolean(i, spells.Name.." | "..spells.spellname, true)
       SpellAdded = true
     end
   end
@@ -124,7 +124,8 @@ end
 function ChallengerAntiGapcloser:ProcessSpell(unit, spell)
   if not self.Menu.AntiGapcloser.Enabled:Value() or GetTeam(unit) == GetTeam(myHero) or GetObjectType(unit) ~= Obj_AI_Hero or not self.spells[spell.name] or (self.Menu and not self.Menu.AntiGapcloser[spell.name]:Value()) then return end
   local added = spell.target == myHero and true or false
-  if not spell.target and ((GetDistanceSqr(unit) > GetDistanceSqr(Vector(unit) + 300 * (Vector(spell.endPos) - Vector(unit)):normalized()) or GetDistanceSqr(unit) > GetDistanceSqr(Vector(unit) + 100 * (Vector(spell.endPos) - Vector(unit)):normalized())))  then
+
+  if GetObjectName(spell.target) == "" and ((GetDistanceSqr(unit) > GetDistanceSqr(Vector(unit) + 300 * (Vector(spell.endPos) - Vector(unit)):normalized()) or GetDistanceSqr(unit) > GetDistanceSqr(Vector(unit) + 100 * (Vector(spell.endPos) - Vector(unit)):normalized())))  then
     added = true
   end
 
@@ -196,7 +197,7 @@ function ChallengerInterrupter:AddToMenu(menu)
   self.Menu.Interrupter:Boolean("Enabled", "Enabled", true)
   for i, spells in pairs(self.spells) do
     if table.contains(EnemyNames, spells.Name) then
-      self.Menu.Interrupter:Boolean(i, spells.Name.." - "..spells.spellname, true)
+      self.Menu.Interrupter:Boolean(i, spells.Name.." | "..spells.spellname, true)
       SpellAdded = true
     end
   end
@@ -284,14 +285,14 @@ function ChallengerTargetSelector:__init(range, damageType, includeShields, from
     self.Menu.TargetSelector.FocusTargetSettings:Boolean("ForceFocusSelected", "Attack Only Selected Target", false)
     OnLoad(function() 
     self.Menu.TargetSelector:Boolean("AutoPriority", "Auto Arrange Priorities", true, function(var) 
-  	  if var then
+      if var then
         for i, enemy in pairs(GetEnemyHeroes()) do
-  	      self.Menu.TargetSelector["TargetSelector" ..GetObjectName(enemy).. "Priority"]:Value(self:GetDBPriority(GetObjectName(enemy)))
+          self.Menu.TargetSelector["TargetSelector" ..GetObjectName(enemy).. "Priority"]:Value(self:GetDBPriority(GetObjectName(enemy)))
         end
       end
     end)
     for i, enemy in pairs(GetEnemyHeroes()) do
-  	  self.Menu.TargetSelector:Slider("TargetSelector" ..GetObjectName(enemy).. "Priority", GetObjectName(enemy), self.Menu.TargetSelector.AutoPriority:Value() and self:GetDBPriority(GetObjectName(enemy)) or 1, 1, 5, 1)
+      self.Menu.TargetSelector:Slider("TargetSelector" ..GetObjectName(enemy).. "Priority", GetObjectName(enemy), self.Menu.TargetSelector.AutoPriority:Value() and self:GetDBPriority(GetObjectName(enemy)) or 1, 1, 5, 1)
     end
     end)
     self.Menu.TargetSelector:DropDown("TargetingMode", "Target Mode", 1, {"Auto Priority", "Less Attack", "Less Cast", "Lowest HP", "Most AD", "Most AP", "Closest", "Closest to Mouse"})
@@ -308,13 +309,13 @@ end
 
 function ChallengerTargetSelector:Draw()
   if (self.Menu and self.Menu.TargetSelector.FocusTargetSettings.FocusSelected:Value() or self.focusSelected) and self:ValidTarget(self.SelectedTarget) then
-  	DrawCircle(GetOrigin(self.SelectedTarget), 150, 2, 20, ARGB(255,255,0,0))
+    DrawCircle(GetOrigin(self.SelectedTarget), 150, 2, 20, ARGB(255,255,0,0))
   end
 end
 
 function ChallengerTargetSelector:WndMsg(msg, key)
   if msg == WM_LBUTTONDOWN and (self.Menu and self.Menu.TargetSelector.FocusTargetSettings.FocusSelected:Value() or self.focusSelected) then
-  	local target, distance = nil, math.huge
+    local target, distance = nil, math.huge
     for i, enemy in pairs(GetEnemyHeroes()) do
       if self:ValidTarget(enemy) then
         local distance2 = GetDistanceSqr(enemy, GetMousePos())
@@ -338,16 +339,16 @@ end
 function ChallengerTargetSelector:GetPriority(unit)
   local prio = 1
   if self.Menu.TargetSelector["TargetSelector" ..GetObjectName(unit).. "Priority"] ~= nil then
-  	prio = self.Menu.TargetSelector["TargetSelector" ..GetObjectName(unit).. "Priority"]:Value()
+    prio = self.Menu.TargetSelector["TargetSelector" ..GetObjectName(unit).. "Priority"]:Value()
   end
   if prio == 2 then
-  	return 1.5
+    return 1.5
   elseif prio == 3 then
-  	return 1.75
+    return 1.75
   elseif prio == 4 then
-  	return 2
+    return 2
   elseif prio == 5 then 
-  	return 2.5
+    return 2.5
   end
   return prio
 end
@@ -369,9 +370,9 @@ function ChallengerTargetSelector:GetTarget()
   end
   local targets = {}
   for i, enemy in pairs(GetEnemyHeroes()) do
-  	if self.IsValidTarget(enemy, self.range, self.damageType, self.includeShields, self.from) then
-  	  table.insert(targets, enemy)
-  	end
+    if self.IsValidTarget(enemy, self.range, self.damageType, self.includeShields, self.from) then
+      table.insert(targets, enemy)
+    end
   end
   self.SortMode = self.Mode or (self.Menu and self.Menu.TargetSelector.TargetingMode:Value() or 1)
   table.sort(targets, self.sorting[self.SortMode])
@@ -445,10 +446,7 @@ end
 
 require("DamageLib")
 require("OpenPredict")
-_G.ChallengerCommon = {AntiGapcloser = ChallengerAntiGapcloser, Interrupter = ChallengerInterrupter, TargetSelector = ChallengerTargetSelector, MinionManager = ChallengerMinionManager
-  --Orbwalker = ChallengerOrbwalker()
-  --Prediction = ChallengerPrediction()
-}
+_G.ChallengerCommon = {AntiGapcloser = ChallengerAntiGapcloser, Interrupter = ChallengerInterrupter, TargetSelector = ChallengerTargetSelector, MinionManager = ChallengerMinionManager}
 _G.ChallengerCommonLoaded = true
 _G.SpellSlot = {Q = 0, W = 1, E = 2, R = 3, Summoner1 = 4, Summoner2 = 5, Item1 = 6, Item2 = 7, Item3 = 8, Item4 = 9, Item5 = 10, Item6 = 11, Trinket = 12, Recall = 13, OathSworn = 92, Interact = 94, Internal = 10000}
 _G.Game = {MapID = GetMapID(), PrintChat = function(str) print(str) end, Version = GetGameVersion(), Ping = function() return GetLatency() end, CursorPos = function() return GetMousePos() end, CursorPos2D = function() return GetCursorPos() end, Time = function() return GetGameTimer() end}
