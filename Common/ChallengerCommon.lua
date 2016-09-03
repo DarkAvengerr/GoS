@@ -1,6 +1,6 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = 0.12
+ChallengerCommonVersion = 0.13
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -50,8 +50,8 @@ function ChallengerAntiGapcloser:__init(menu, func)
     ["KatarinaE"]                      = {Name = "Katarina",     spellname = "E | Shunpo"},
     ["KennenLightningRush"]            = {Name = "Kennen",       spellname = "E | Lightning Rush"},
     ["KhazixE"]                        = {Name = "Khazix",       spellname = "E | Leap"},
-    ["LeblancSlide"]                   = {Name = "LeBlanc",      spellname = "W | Distortion"},
-    ["LeblancSlideM"]                  = {Name = "LeBlanc",      spellname = "R | Distortion"},
+    ["LeblancSlide"]                   = {Name = "Leblanc",      spellname = "W | Distortion"},
+    ["LeblancSlideM"]                  = {Name = "Leblanc",      spellname = "R | Distortion"},
     ["LeonaZenithBlade"]               = {Name = "Leona",        spellname = "E | Zenith Blade"},
     ["LissandraE"]                     = {Name = "Lissandra",    spellname = "E | Glacial Path"},
     ["LucianE"]                        = {Name = "Lucian",       spellname = "E | Relentless Pursuit"},
