@@ -1,6 +1,6 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = 0.13
+ChallengerCommonVersion = 0.14
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -95,24 +95,27 @@ function ChallengerAntiGapcloser:AddToMenu(menu)
   self.Menu = menu
   local SpellAdded = false
   local EnemyNames = {}
-
-  for _, enemy in pairs(GetEnemyHeroes()) do
-    table.insert(EnemyNames, GetObjectName(enemy))
-  end
+  
+  OnLoad(function()
+    for _, enemy in pairs(GetEnemyHeroes()) do
+      table.insert(EnemyNames, GetObjectName(enemy))
+    end
+  end)
 
   self.Menu:Menu("AntiGapcloser", "Anti-Gapcloser")
   self.Menu.AntiGapcloser:Boolean("Enabled", "Enabled", true)
-  for i, spells in pairs(self.spells) do
-    if table.contains(EnemyNames, spells.Name) then
-      self.Menu.AntiGapcloser:Boolean(i, spells.Name.." | "..spells.spellname, true)
-      SpellAdded = true
+  OnLoad(function()
+    for i, spells in pairs(self.spells) do
+      if table.contains(EnemyNames, spells.Name) then
+        self.Menu.AntiGapcloser:Boolean(i, spells.Name.." | "..spells.spellname, true)
+        SpellAdded = true
+      end
+   end
+
+    if not SpellAdded then
+      self.Menu.AntiGapcloser:Info("Info", "No spell available to interrupt")
     end
-  end
-
-  if not SpellAdded then
-    self.Menu.AntiGapcloser:Info("Info", "No spell available to interrupt")
-  end
-
+  end)
 end
 
 function ChallengerAntiGapcloser:TriggerCallbacks(unit, spell)
@@ -189,22 +192,26 @@ function ChallengerInterrupter:AddToMenu(menu)
   local SpellAdded = false
   local EnemyNames = {}
 
-  for _, enemy in ipairs(GetEnemyHeroes()) do
-    table.insert(EnemyNames, GetObjectName(enemy))
-  end
+  OnLoad(function()
+    for _, enemy in ipairs(GetEnemyHeroes()) do
+      table.insert(EnemyNames, GetObjectName(enemy))
+    end
+  end)
 
   self.Menu:Menu("Interrupter","Interrupter")
   self.Menu.Interrupter:Boolean("Enabled", "Enabled", true)
-  for i, spells in pairs(self.spells) do
-    if table.contains(EnemyNames, spells.Name) then
-      self.Menu.Interrupter:Boolean(i, spells.Name.." | "..spells.spellname, true)
-      SpellAdded = true
+  OnLoad(function()
+    for i, spells in pairs(self.spells) do
+      if table.contains(EnemyNames, spells.Name) then
+        self.Menu.Interrupter:Boolean(i, spells.Name.." | "..spells.spellname, true)
+        SpellAdded = true
+      end
     end
-  end
 
-  if not SpellAdded then
-    self.Menu.Interrupter:Info("Info", "No spell available to interrupt")
-  end
+    if not SpellAdded then
+     self.Menu.Interrupter:Info("Info", "No spell available to interrupt")
+    end
+  end)
 end
 
 function ChallengerInterrupter:TriggerCallbacks(unit, spell)
