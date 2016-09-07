@@ -1,10 +1,10 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = "0.19"
+DamageLibVersion = 0.2
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
-    if tonumber(data) > tonumber(DamageLibVersion) then
+    if tonumber(data) > DamageLibVersion then
       DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.lua", COMMON_PATH .. "DamageLib.lua", function() print("Updated DamageLib For "..GetGameVersion():sub(1,4)..", Please press F6 twice to reload.") return end)
     end
   end) 
@@ -387,7 +387,7 @@ local DamageLibTable = {
   ["Gnar"] = {
     {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({5, 35, 65, 95, 125})[level] + 1.15 * source.totalDamage end},
     {Slot = "QM", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({5, 45, 85, 125, 165})[level] + 1.2 * source.totalDamage end},
-    {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({15, 25, 35, 45, 55})[level] + GetBonusAP(source) + ({6, 8, 10, 12, 14})[level] / 100 * GetMaxHP(target) end},
+    {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({10, 20, 30, 40, 50})[level] + GetBonusAP(source) + ({6, 8, 10, 12, 14})[level] / 100 * GetMaxHP(target) end},
     {Slot = "WM", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({25, 45, 65, 85, 105})[level] + source.totalDamage end},
     {Slot = "E", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({20, 60, 100, 140, 180})[level] + GetMaxHP(source) * 0.06 end},
     {Slot = "EM", Stage = 2, DamageType = 1, Damage = function(source, target, level) return ({20, 60, 100, 140, 180})[level] + GetMaxHP(source) * 0.06 end},
@@ -781,8 +781,8 @@ local DamageLibTable = {
   },
 
   ["Shen"] = {
-    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) local dmg = (({3, 3.5, 4, 4.5, 5})[level] + 0.015 * GetBonusAP(source)) * GetMaxHP(target) / 100; if GetObjectType(target) == Obj_AI_Hero then return dmg end; return math.min(({30, 50, 70, 90, 110})[level]+dmg, ({75, 100, 125, 150, 175})[level]) end},
-    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) local dmg = (({5, 5.5, 6, 6.6, 7})[level] + 0.02 * GetBonusAP(source)) * GetMaxHP(target) / 100; if GetObjectType(target) == Obj_AI_Hero then return dmg end; return math.min(({30, 50, 70, 90, 110})[level]+dmg, ({75, 100, 125, 150, 175})[level]) end},
+    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) local dmg = (({2, 2.5, 3, 3.5, 4})[level] + 0.015 * GetBonusAP(source)) * GetMaxHP(target) / 100; if GetObjectType(target) == Obj_AI_Hero then return dmg end; return math.min(({30, 50, 70, 90, 110})[level]+dmg, ({75, 100, 125, 150, 175})[level]) end},
+    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) local dmg = (({4, 4.5, 5, 5.5, 6})[level] + 0.02 * GetBonusAP(source)) * GetMaxHP(target) / 100; if GetObjectType(target) == Obj_AI_Hero then return dmg end; return math.min(({30, 50, 70, 90, 110})[level]+dmg, ({75, 100, 125, 150, 175})[level]) end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({50, 85, 120, 155, 190})[level] + 0.5 * GetBonusAP(source) end},
   },
 
@@ -851,10 +851,10 @@ local DamageLibTable = {
   },
 
   ["Taliyah"] = {
-    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return (GetObjectType(target) == Obj_AI_Minion and 1.5 or 1) * ({60, 80, 100, 120, 140})[level] + 0.4 * GetBonusAP(source) end},
-    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return (GetObjectType(target) == Obj_AI_Minion and 1.5 or 1) * ({180, 240, 300, 360, 420})[level] + 1.2 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 80, 100, 120, 140})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({180, 240, 300, 360, 420})[level] + 1.2 * GetBonusAP(source) end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 80, 100, 120, 140})[level] + 0.4 * GetBonusAP(source) end},
-    {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 105, 130, 155, 180})[level] + 0.4 * GetBonusAP(source) end},
+    {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({70, 90, 110, 130, 150})[level] + 0.4 * GetBonusAP(source) end},
     {Slot = "E", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({160, 210, 260, 310, 360})[level] + 0.8 * GetBonusAP(source) end},
   },
 
