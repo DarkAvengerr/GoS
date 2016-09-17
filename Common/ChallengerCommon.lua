@@ -1,6 +1,6 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = 0.14
+ChallengerCommonVersion = 0.15
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -372,7 +372,7 @@ function ChallengerTargetSelector:GetDBPriority(charName)
 end
 
 function ChallengerTargetSelector:GetTarget()
-  if (self.Menu and self.Menu.TargetSelector.FocusTargetSettings.FocusSelected:Value() or self.focusSelected) and self.IsValidTarget(self.SelectedTarget, self.Menu.TargetSelector.FocusTargetSettings.ForceFocusSelected:Value() and math.huge or self.range, self.damageType, self.includeShields, self.from) then
+  if (self.Menu and self.Menu.TargetSelector.FocusTargetSettings.FocusSelected:Value() or self.focusSelected) and self.IsValidTarget(self.SelectedTarget, (self.Menu and self.Menu.TargetSelector.FocusTargetSettings.ForceFocusSelected:Value()) and math.huge or self.range, self.damageType, self.includeShields, self.from) then
     return self.SelectedTarget
   end
   local targets = {}
