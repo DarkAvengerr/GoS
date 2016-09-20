@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = 0.2
+DamageLibVersion = 0.21
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -220,7 +220,7 @@ local DamageLibTable = {
   ["Anivia"] = {
     {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 85, 110, 135, 160})[level] + 0.4 * GetBonusAP(source) end},
     {Slot = "Q", Stage = 2, DamageType = 2, Damage = function(source, target, level) return ({60, 90, 120, 150, 180})[level] * 2 + GetBonusAP(source) end},
-    {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return (({55, 85, 115, 145, 175})[level] + 0.5 * GetBonusAP(source)) * (GotBuff(target, "chilled") and 2 or 1) end},
+    {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return (({50, 75, 100, 125, 150})[level] + 0.5 * GetBonusAP(source)) * (GotBuff(target, "chilled") and 2 or 1) end},
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 120, 160})[level] + 0.25 * GetBonusAP(source) end},
   },
 
@@ -527,7 +527,7 @@ local DamageLibTable = {
 
   ["Kogmaw"] = {
     {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 130, 180, 230, 280})[level] + 0.5 * GetBonusAP(source) end},
-    {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) local dmg = (0.02 + (0.01*(GetBonusAP(source)) * 0.75)) * GetMaxHP(target) ; if GetObjectType(target) == Obj_AI_Minion and dmg > 100 then dmg = 100 end ; return dmg end},
+    {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) local dmg = (({0.02, 0.03, 0.04, 0.05, 0.06})[level] + (0.01*(GetBonusAP(source)))) * GetMaxHP(target) ; if GetObjectType(target) == Obj_AI_Minion and dmg > 100 then dmg = 100 end ; return dmg end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210, 260})[level] + 0.7 * GetBonusAP(source) end},
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return (({70, 110, 150})[level] + 0.65 * source.totalDamage + 0.25 * GetBonusAP(source)) * (GetPercentHP(target) < 25 and 3 or (GetPercentHP(target) < 50 and 2 or 1)) end},
   },
