@@ -1,11 +1,4 @@
-ChallengerBaseultVersion     = "0.1"
-
-function ChallengerBaseultUpdaterino(data)
-  if tonumber(data) > tonumber(ChallengerBaseultVersion) then
-    PrintChat("<b><font color='#EE2EC'>Challenger Baseult - </font></b> New version found! " ..tonumber(data).." Downloading update, please wait...")
-    DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerBaseult.lua", SCRIPT_PATH .. "ChallengerBaseult.lua", function() PrintChat("<b><font color='#EE2EC'>Challenger Baseult - </font></b> Updated from v"..tonumber(ChallengerBaseultVersion).." to v"..tonumber(data)..". Please press F6 twice to reload.") return end)
-  end
-end
+ChallengerBaseultVersion = 0.11
 
 class "ChallengerBaseult"
 
@@ -127,5 +120,12 @@ function ChallengerBaseult:Collision(unit)
   return count
 end
 
-GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerBaseult.version", ChallengerBaseultUpdaterino)
+if GetUser() ~= "Deftsu" then 
+  GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerBaseult.version", function(data)
+    if tonumber(data) > ChallengerBaseultVersion then
+      PrintChat("<b><font color='#EE2EC'>Challenger Baseult - </font></b> New version found! " ..tonumber(data).." Downloading update, please wait...")
+      DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerBaseult.lua", SCRIPT_PATH .. "ChallengerBaseult.lua", function() PrintChat("<b><font color='#EE2EC'>Challenger Baseult - </font></b> Updated from v"..ChallengerBaseultVersion.." to v"..tonumber(data)..". Please press F6 twice to reload.") return end)
+    end
+  end)
+end
 ChallengerBaseult()
