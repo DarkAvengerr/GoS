@@ -30,5 +30,5 @@ v0.24 : Fixed an error when you have an ally azir
 v0.25 : Rewritten Graves Orbwalking from scrtatch, it's working perfectly at different attack speeds now, Fixed Nexus/Inhibitors Orbwalking, Improved Lucian E AA Reset, Graves E AA Reset is now working perfectly. (should work perfectly with Graves Exploit :))
 v0.26 : Updated Kogmaw's W Damage for 6.19, Updated Kled's Damage for 6.19 (-20% Reduction Removed)
 v0.27 : Fixed Rengar Leap Orbwalking, Fixed A bug with rengar if you Q mid-air it will reset AA timer, Optimized Max Range Orbwalking, Added A Proper Caitlyn Orbwalking (Long range attacks own timer), Added Ekko E AA Reset, Fixed Nasus Q AutoAttack Damage, Fixed Darius W AutoAttack Damage, Fixed Titanic Hydra AA Reset, Fixed Ashe Q AA Reset, Fixed Blitzcrank E AA Reset, Fixed Nasus Q AA Reset, Fixed Darius W AA Reset, Fixed Fiora E AA Reset, Fixed More AA Resets that i can't list them all (around ~15 champs)
-v0.28 : Updated Ashe's Q AA Reset for Patch 6.20
+v0.28 : Updated Ashe's Q AA Reset for Patch 6.20, Jinx's early lasthit on minigun form should be fixed
 ]]
