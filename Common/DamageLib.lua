@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = 0.23
+DamageLibVersion = 0.24
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -67,28 +67,24 @@ function CalcPhysicalDamage(source, target, amount)
 
   local armor = GetArmor(target)
   local bonusArmor = GetArmor(target) - GetBaseArmor(target)
-  local value
+  local value = 100 / (100 + (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat)
 
   if armor < 0 then
     value = 2 - 100 / (100 - armor)
   elseif (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat < 0 then
     value = 1
-  else
-    value = 100 / (100 + (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat)
   end
   return math.max(0, math.floor(DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 1)))
 end
 
 function CalcMagicalDamage(source, target, amount)
   local mr = GetMagicResist(target)
-  local value
+  local value = 100 / (100 + (mr * GetMagicPenPercent(source)) - GetMagicPenFlat(source))
 
   if mr < 0 then
     value = 2 - 100 / (100 - mr)
   elseif (mr * GetMagicPenPercent(source)) - GetMagicPenFlat(source) < 0 then
     value = 1
-  else
-    value = 100 / (100 + (mr * GetMagicPenPercent(source)) - GetMagicPenFlat(source))
   end
   return math.max(0, math.floor(DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 2)))
 end
