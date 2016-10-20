@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = 0.25
+DamageLibVersion = 0.26
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -525,7 +525,7 @@ local DamageLibTable = {
     {Slot = "Q", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 130, 180, 230, 280})[level] + 0.5 * GetBonusAP(source) end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) local dmg = (({0.02, 0.03, 0.04, 0.05, 0.06})[level] + (0.01*(GetBonusAP(source)))) * GetMaxHP(target) ; if GetObjectType(target) == Obj_AI_Minion and dmg > 100 then dmg = 100 end ; return dmg end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({60, 110, 160, 210, 260})[level] + 0.7 * GetBonusAP(source) end},
-    {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return (({70, 110, 150})[level] + 0.65 * source.totalDamage + 0.25 * GetBonusAP(source)) * (GetPercentHP(target) < 25 and 3 or (GetPercentHP(target) < 50 and 2 or 1)) end},
+    {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return (({100, 140, 180})[level] + 0.65 * source.totalDamage + 0.25 * GetBonusAP(source)) * (GetPercentHP(target) < 25 and 3 or (GetPercentHP(target) < 50 and 2 or 1)) end},
   },
 
   ["Kalista"] = {
