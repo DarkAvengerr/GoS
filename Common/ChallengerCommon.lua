@@ -1,6 +1,6 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = 0.16
+ChallengerCommonVersion = 0.17
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -15,7 +15,7 @@ if not FileExist(COMMON_PATH.."DamageLib.lua") then
 end
 
 if not FileExist(COMMON_PATH.."OpenPredict.lua") then
-  DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/OpenPredict.lua", COMMON_PATH .. "OpenPredict.lua", function() print("Downloaded OpenPredict, Please press F6 twice to reload.") return end)
+  DownloadFileAsync("https://raw.githubusercontent.com/Jo7j/GoS/master/OpenPredict/OpenPredict.lua", COMMON_PATH .. "OpenPredict.lua", function() print("Downloaded OpenPredict, Please press F6 twice to reload.") return end)
 end
 
 class "ChallengerAntiGapcloser"
@@ -125,7 +125,8 @@ function ChallengerAntiGapcloser:TriggerCallbacks(unit, spell)
 end
 
 function ChallengerAntiGapcloser:ProcessSpell(unit, spell)
-  if not self.Menu.AntiGapcloser.Enabled:Value() or GetTeam(unit) == GetTeam(myHero) or GetObjectType(unit) ~= Obj_AI_Hero or not self.spells[spell.name] or (self.Menu.AntiGapcloser[spell.name] ~= nil and not self.Menu.AntiGapcloser[spell.name]:Value()) then return end
+  if not self.Menu.AntiGapcloser.Enabled:Value() or GetTeam(unit) == GetTeam(myHero) or GetObjectType(unit) ~= Obj_AI_Hero then return end
+  if not self.spells[spell.name] or (not self.Menu.AntiGapcloser[spell.name] or not self.Menu.AntiGapcloser[spell.name]:Value()) then return end
   local added = spell.target == myHero and true or false
 
   if GetObjectName(spell.target) == "" and ((GetDistanceSqr(unit) > GetDistanceSqr(Vector(unit) + 300 * (Vector(spell.endPos) - Vector(unit)):normalized()) or GetDistanceSqr(unit) > GetDistanceSqr(Vector(unit) + 100 * (Vector(spell.endPos) - Vector(unit)):normalized())))  then
