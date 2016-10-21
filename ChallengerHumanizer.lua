@@ -1,4 +1,4 @@
-ChallengerHumanizerVersion     = 0.12
+ChallengerHumanizerVersion     = 0.13
 
 class "ChallengerHumanizer"
 
@@ -86,7 +86,7 @@ end
 GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerHumanizer.version", function(data)
   if tonumber(data) > ChallengerHumanizerVersion then
     PrintChat("<font color='#FFFF00'>Challenger Humanizer - </font> New version found! "..tonumber(data).." Downloading update, please wait...")
-    DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Humanizer.lua", SCRIPT_PATH .. "ChallengerHumanizer.lua", function() PrintChat("<font color='#FFFF00'>Challenger Humanizer - </font> Updated from v"..ChallengerHumanizerVersion.." to v"..tonumber(data)..". Please press F6 twice to reload.") return end)
+    DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerHumanizer.lua", SCRIPT_PATH .. "ChallengerHumanizer.lua", function() PrintChat("<font color='#FFFF00'>Challenger Humanizer - </font> Updated from v"..tostring(ChallengerHumanizerVersion).." to v"..data..". Please press F6 twice to reload.") return end)
   else
     PrintChat("<font color='#FFFF00'>Challenger Humanizer - </font> Loaded v" ..ChallengerHumanizerVersion)
   end  
