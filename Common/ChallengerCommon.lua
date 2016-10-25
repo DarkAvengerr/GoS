@@ -1,6 +1,6 @@
 if ChallengerCommonLoaded then return end
 
-ChallengerCommonVersion = 0.17
+ChallengerCommonVersion = 0.18
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -346,6 +346,7 @@ end
 
 function ChallengerTargetSelector:GetPriority(unit)
   local prio = 1
+  if self.Menu == nil then return prio end
   if self.Menu.TargetSelector["TargetSelector" ..GetObjectName(unit).. "Priority"] ~= nil then
     prio = self.Menu.TargetSelector["TargetSelector" ..GetObjectName(unit).. "Priority"]:Value()
   end
