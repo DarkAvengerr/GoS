@@ -12,7 +12,7 @@ function GetWebResultAsync(url, callback)
     s, status, partial = socket:receive(1024)
     if status == 'timeout' and not started then
       started = true
-      socket:send("GET "..'/GOS/TCPUpdater/GetScript6.php?script='..Base64Encode(url)..'&rand='..math.random(99999999).." HTTP/1.1\r\nHost: gamingonsteroids.com\r\n\r\n")
+      socket:send("GET "..'/GOS/TCPUpdater/GetScript5.php?script='..Base64Encode(url)..'&rand='..math.random(99999999).." HTTP/1.1\r\nHost: gamingonsteroids.com\r\n\r\n")
     end
     result = result .. (s or partial)
     if result:find('</scr'..'ipt>') then
@@ -45,7 +45,7 @@ function DownloadFileAsync(url, path, callback)
     s, status, partial = socket:receive(1024)
     if status == 'timeout' and not started then
       started = true
-      socket:send("GET "..'/GOS/TCPUpdater/GetScript6.php?script='..Base64Encode(url)..'&rand='..math.random(99999999).." HTTP/1.1\r\nHost: gamingonsteroids.com\r\n\r\n")
+      socket:send("GET "..'/GOS/TCPUpdater/GetScript5.php?script='..Base64Encode(url)..'&rand='..math.random(99999999).." HTTP/1.1\r\nHost: gamingonsteroids.com\r\n\r\n")
     end
     result = result .. (s or partial)
     if result:find('</si'..'ze>') then
