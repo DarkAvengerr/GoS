@@ -1,4 +1,3 @@
-_G.DrawText, _G.DrawLine, _G.DrawCircle, _G.FillRect, _G.PrintChat, _G.DrawSprite, _G.PlaySound = function() end, function() end, function() end, function() end, function() end, function() end, function() end
 print([[
 
 
@@ -15,3 +14,4 @@ print([[
 
 
 ]])
+_G.DrawText, _G.DrawLine, _G.DrawCircle, _G.FillRect, _G.PrintChat, _G.DrawSprite, _G.PlaySound = function() end, function() end, function() end, function() end, function() end, function() end, function() end
