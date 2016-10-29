@@ -1,6 +1,6 @@
 function GetWebResultAsync(url, callback, UseHttps)
   local UseHttps = UseHttps or true
-  url = url:gsub("https://", ""):gsub("http://", "")
+  local url = url:gsub("https://", ""):gsub("http://", "")
   local file = ""
   local GotResult = false
   local socket = require("socket").tcp()
