@@ -12,7 +12,7 @@ local function Base64Encode(data)
   end)..({ '', '==', '=' })[#data%3+1])
 end
 
-local function AutoUpdater:Base64Decode(data)
+local function Base64Decode(data) -- fere too op
   local b = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
   data = string.gsub(data, '[^'..b..'=]', '')
   return (data:gsub('.', function(x)
