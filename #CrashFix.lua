@@ -18,7 +18,7 @@ function GetWebResultAsync(url, callback, UseHttps)
       local a, b = file:find('\r\n\r\n')
       file = file:sub(a,-1)
       local i, ContentStart = file:find('<scr'..'ipt>')
-      local ContentEnd = file:find('</scr'..'ipt>')
+      local ContentEnd, _ = file:find('</scr'..'ipt>')
       if not ContentStart or not ContentEnd then return end
       if callback and type(callback) == 'function' then
         callback(Base64Decode(file:sub(ContentStart + 1, ContentEnd - 1)))
