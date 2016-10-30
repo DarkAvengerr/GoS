@@ -1,4 +1,5 @@
 function GetWebResultAsync(url, callback, UseHttps)
+  local UseHttps = UseHttps ~= nil and UseHttps or true
   local url = url:gsub("https://", ""):gsub("http://", "")
   local GotResult = false
   local started = false
@@ -16,21 +17,22 @@ function GetWebResultAsync(url, callback, UseHttps)
     end
     result = result .. (s or partial)
     if result:find('</scr'..'ipt>') then
-      result = result:sub(result:find('\r\n\r\n'),-1)
-      local i, ContentStart = result:find('<scr'..'ipt>')
-      local ContentEnd = result:find('</scr'..'ipt>')
+      local a,b = result:find('\r\n\r\n')
+      result = result:sub(a,-1)
+      local HeaderEnd, ContentStart = result:find('<scr'..'ipt>')
+      local ContentEnd, _ = result:find('</scr'..'ipt>')
       if not ContentStart or not ContentEnd then return end
-      GotResult = true
-      socket:close()
-      socket = nil
       if callback and type(callback) == 'function' then
         callback(Base64Decode(result:sub(ContentStart + 1, ContentEnd - 1)))
       end
+      GotResult = true
+      socket:close()
     end
   end)
 end
 
 function DownloadFileAsync(url, path, callback, UseHttps)
+  local UseHttps = UseHttps ~= nil and UseHttps or true
   local url = url:gsub("https://", ""):gsub("http://", "")
   local filesize
   local GotFile = false
@@ -54,27 +56,27 @@ function DownloadFileAsync(url, path, callback, UseHttps)
       end
     end
     if result:find('</scr'..'ipt>') then
-      result = result:sub(result:find('\r\n\r\n'),-1)
+      local a,b = result:find('\r\n\r\n')
+      result = result:sub(a,-1)
       local file = ""
       for line,content in ipairs(result:split('\n')) do
         if content:len() > 5 then
           file = file..content
         end
       end
-      local i, ContentStart = file:find('<scr'..'ipt>')
-      local ContentEnd = file:find('</scr'..'ipt>')
+      local HeaderEnd, ContentStart = file:find('<scr'..'ipt>')
+      local ContentEnd, _ = file:find('</scr'..'ipt>')
       if not ContentStart or not ContentEnd then return end
       local newf = file:sub(ContentStart+1,ContentEnd-1):gsub('\r','')
       if newf:len() ~= filesize then return end
       local f = io.open(path,"w+b")
       f:write(Base64Decode(newf))
       f:close()
-      GotFile = true
-      socket:close()
-      socket = nil
       if callback and type(callback) == 'function' then
         callback()
       end
+      GotFile = true
+      socket:close()
     end
   end)
 end
