@@ -1,6 +1,6 @@
 function GetWebResultAsync(url, callback, UseHttps)
   local UseHttps = UseHttps or true
-  url = url:gsub("https://", ""):gsub("http://", "")
+  local url = url:gsub("https://", ""):gsub("http://", "")
   local file = ""
   local GotResult = false
   local socket = require("socket").tcp()
@@ -15,9 +15,10 @@ function GetWebResultAsync(url, callback, UseHttps)
     if file:find('</scr'..'ipt>') then
       GotResult = true
       socket:close()
-      file = file:sub(file:find('\r\n\r\n'),-1)
+      local a, b = file:find('\r\n\r\n')
+      file = file:sub(a,-1)
       local i, ContentStart = file:find('<scr'..'ipt>')
-      local ContentEnd = file:find('</scr'..'ipt>')
+      local ContentEnd, _ = file:find('</scr'..'ipt>')
       if not ContentStart or not ContentEnd then return end
       if callback and type(callback) == 'function' then
         callback(Base64Decode(file:sub(ContentStart + 1, ContentEnd - 1)))
