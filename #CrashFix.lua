@@ -10,7 +10,7 @@ function GetWebResultAsync(url, callback, UseHttps)
   socket:connect('gamingonsteroids.com', 80)
   Callback.Add("Tick", function()
     if GotResult then return end
-    s, status, partial = socket:receive(1024)
+    local s, status, partial = socket:receive(1024)
     if status == 'timeout' and not started then
       started = true
       socket:send("GET "..'/GOS/TCPUpdater/GetScript'..(UseHttps and '5' or '6')..'.php?script='..Base64Encode(url)..'&rand='..math.random(99999999).." HTTP/1.1\r\nHost: gamingonsteroids.com\r\n\r\n")
@@ -44,7 +44,7 @@ function DownloadFileAsync(url, path, callback, UseHttps)
   socket:connect('gamingonsteroids.com', 80)
   Callback.Add("Tick", function()
     if GotFile then return end
-    s, status, partial = socket:receive(1024)
+    local s, status, partial = socket:receive(1024)
     if status == 'timeout' and not started then
       started = true
       socket:send("GET "..'/GOS/TCPUpdater/GetScript'..(UseHttps and '5' or '6')..'.php?script='..Base64Encode(url)..'&rand='..math.random(99999999).." HTTP/1.1\r\nHost: gamingonsteroids.com\r\n\r\n")
