@@ -137,10 +137,6 @@ function DamageReductionMod(source,target,amount,DamageType)
       amount = amount * 0.85
     end
 
-    if GotBuff(target, "KatarinaEReduction") > 0 then
-      amount = amount * 0.85
-    end
-
     if GotBuff(target, "MaokaiDrainDefense") > 0 and GetObjectType(source) ~= Obj_AI_Turret then
       amount = amount * 0.8
     end
