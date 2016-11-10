@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = 0.27
+DamageLibVersion = 0.28
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -90,8 +90,13 @@ function CalcMagicalDamage(source, target, amount)
 end
 
 function DamageReductionMod(source,target,amount,DamageType)
-  if GetObjectType(source) == Obj_AI_Hero and target then
-    
+  if GetObjectType(source) == Obj_AI_Hero then
+    if GotBuff(source, "Exhaust") > 0 then
+      amount = amount * 0.6
+    end
+  end
+ 
+  if GetObjectType(target) == Obj_AI_Hero then
     local BoSCount = GotBuff(target, "MasteryWardenOfTheDawn")
     if BoSCount > 0 then
       amount = amount * (1 - (0.06 * BoSCount))
@@ -103,10 +108,6 @@ function DamageReductionMod(source,target,amount,DamageType)
 
     if GotBuff(target, "urgotswapdef") > 0 then
       amount = amount * (1 - ({0.3, 0.4, 0.5})[GetCastLevel(target, _R)])
-    end
-
-    if GotBuff(source, "Exhaust") > 0 then
-      amount = amount * 0.6
     end
 
     if GetItemSlot(target, 1054) > 0 then
