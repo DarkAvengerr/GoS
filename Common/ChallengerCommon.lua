@@ -3,7 +3,7 @@ if ChallengerCommonLoaded then return end
 require("DamageLib")
 require("OpenPredict")
 
-ChallengerCommonVersion = 0.19
+ChallengerCommonVersion = 0.2
   
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/ChallengerCommon.version", 
   function(data)
@@ -70,7 +70,6 @@ function ChallengerAntiGapcloser:__init(menu, func)
     ["RocketJump"]                     = {Name = "Tristana",     spellname = "W | Rocket Jump"},
     ["SejuaniArcticAssault"]           = {Name = "Sejuani",      spellname = "Q | Arctic Assault"},
     ["ShenShadowDash"]                 = {Name = "Shen",         spellname = "E | Shadow Dash"},
-    ["ShyvanaTransformCast"]           = {Name = "Shyvana",      spellname = "R | Dragon's Descent"},
     ["TalonCutThroat"]                 = {Name = "Talon",        spellname = "E | Cutthroat"},
     ["UFSlash"]                        = {Name = "Malphite",     spellname = "R | Unstoppable Force"},
     ["UdyrBearStance"]                 = {Name = "Udyr",         spellname = "E | Bear Stance"},
