@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = 0.33
+DamageLibVersion = 0.34
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -25,7 +25,7 @@ local DamageReductionTable = {
   ["Braum"] = {buff = "BraumShieldRaise", amount = function(target) return 1 - ({0.3, 0.325, 0.35, 0.375, 0.4})[GetCastLevel(target, _E)] end},
   ["Urgot"] = {buff = "urgotswapdef", amount = function(target) return 1 - ({0.3, 0.4, 0.5})[GetCastLevel(target, _R)] end},
   ["Alistar"] = {buff = "Ferocious Howl", amount = function(target) return ({0.5, 0.4, 0.3})[GetCastLevel(target, _R)] end},
-  ["Amumu"] = {buff = "Tantrum", amount = function(target) return ({2, 4, 6, 8, 10})[GetCastLevel(target, _E)], damageType = 1 end},
+  ["Amumu"] = {buff = "Tantrum", amount = function(target) return ({2, 4, 6, 8, 10})[GetCastLevel(target, _E)] end, damageType = 1},
   ["Galio"] = {buff = "GalioIdolOfDurand", amount = function(target) return 0.5 end},
   ["Garen"] = {buff = "GarenW", amount = function(target) return 0.7 end},
   ["Gragas"] = {buff = "GragasWSelf", amount = function(target) return ({0.1, 0.12, 0.14, 0.16, 0.18})[GetCastLevel(target, _W)] end},
