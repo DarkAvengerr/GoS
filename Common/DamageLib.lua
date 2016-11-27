@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = 0.32
+DamageLibVersion = 0.33
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -20,6 +20,18 @@ local damage = getdmg("R",target,source,3)
 Full function:
 getdmg("SKILL",target,myHero,stagedmg,spelllvl)
 ]]
+
+local DamageReductionTable = {
+  ["Braum"] = {buff = "BraumShieldRaise", amount = function(target) return 1 - ({0.3, 0.325, 0.35, 0.375, 0.4})[GetCastLevel(target, _E)] end},
+  ["Urgot"] = {buff = "urgotswapdef", amount = function(target) return 1 - ({0.3, 0.4, 0.5})[GetCastLevel(target, _R)] end},
+  ["Alistar"] = {buff = "Ferocious Howl", amount = function(target) return ({0.5, 0.4, 0.3})[GetCastLevel(target, _R)] end},
+  ["Amumu"] = {buff = "Tantrum", amount = function(target) return ({2, 4, 6, 8, 10})[GetCastLevel(target, _E)], damageType = 1 end},
+  ["Galio"] = {buff = "GalioIdolOfDurand", amount = function(target) return 0.5 end},
+  ["Garen"] = {buff = "GarenW", amount = function(target) return 0.7 end},
+  ["Gragas"] = {buff = "GragasWSelf", amount = function(target) return ({0.1, 0.12, 0.14, 0.16, 0.18})[GetCastLevel(target, _W)] end},
+  ["Annie"] = {buff = "MoltenShield", amount = function(target) return 1 - ({0.16,0.22,0.28,0.34,0.4})[GetCastLevel(target, _E)] end},
+  ["Malzahar"] = {buff = "malzaharpassiveshield", amount = function(target) return 0.1 end}
+}
 
 _G.Ignite = (GetCastName(myHero, SUMMONER_1):lower():find("summonerdot") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("summonerdot") and SUMMONER_2 or nil))
 _G.Smite = (GetCastName(myHero, SUMMONER_1):lower():find("smite") and SUMMONER_1 or (GetCastName(myHero, SUMMONER_2):lower():find("smite") and SUMMONER_2 or nil))
@@ -97,58 +109,40 @@ function DamageReductionMod(source,target,amount,DamageType)
   end
  
   if GetObjectType(target) == Obj_AI_Hero then
-    local BoSCount = GotBuff(target, "MasteryWardenOfTheDawn")
-    if BoSCount > 0 then
-      amount = amount * (1 - (0.06 * BoSCount))
-    end
+    for i = 0, 63 do
+      if GetBuffCount(target, i) > 0 then
+        if GetBuffName(target, i) == "MasteryWardenOfTheDawn" then
+          amount = amount * (1 - (0.06 * GetBuffCount(target, i)))
+        end
+    
+        if DamageReductionTable[GetObjectName(target)] then
+          if GetBuffName(target, i) == DamageReductionTable[GetObjectName(target)].buff and (not DamageReductionTable[GetObjectName(target)].damagetype or DamageReductionTable[GetObjectName(target)].damagetype == DamageType) then
+            amount = amount * DamageReductionTable[GetObjectName(target)].amount(target)
+          end
+        end
 
-    if GotBuff(target, "BraumShieldRaise") > 0 then
-      amount = amount * (1 - ({0.3, 0.325, 0.35, 0.375, 0.4})[GetCastLevel(target, _E)])
-    end
+        if GetObjectName(target) == "Maokai" and GetObjectType(source) ~= Obj_AI_Turret then
+          if GetBuffName(target, i) == "MaokaiDrainDefense" > 0 then
+            amount = amount * 0.8
+          end
+        end
 
-    if GotBuff(target, "urgotswapdef") > 0 then
-      amount = amount * (1 - ({0.3, 0.4, 0.5})[GetCastLevel(target, _R)])
+        if GetObjectName(target) == "MasterYi" then
+          if GetBuffName(target, i) == "Meditate" > 0 then
+            amount = amount - amount * ({0.5, 0.55, 0.6, 0.65, 0.7})[GetCastLevel(target, _W)] / (GetObjectType(source) == Obj_AI_Turret and 2 or 1)
+          end
+        end
+      end
     end
 
     if GetItemSlot(target, 1054) > 0 then
       amount = amount - 8
     end
 
-    if GotBuff(target, "Ferocious Howl") > 0 then
-      amount = amount * ({0.5, 0.4, 0.3})[GetCastLevel(target, _R)]
-    end
-
-    if GotBuff(target, "Tantrum") > 0 and DamageType == 1 then
-      amount = amount - ({2, 4, 6, 8, 10})[GetCastLevel(target, _E)]
-    end
-
-    if GotBuff(target, "GalioIdolOfDurand") > 0 then
-      amount = amount * 0.5
-    end
-
-    if GotBuff(target, "GarenW") > 0 then
-      amount = amount * 0.7
-    end
-
-    if GotBuff(target, "GragasWSelf") > 0 then
-      amount = amount - amount * ({0.1, 0.12, 0.14, 0.16, 0.18})[GetCastLevel(target, _W)]
-    end
-
-    if GotBuff(target, "VoidStone") > 0 and DamageType == 2 then
+    if GetObjectName(target) == "Kassadin" and DamageType == 2 then
       amount = amount * 0.85
     end
 
-    if GotBuff(target, "MaokaiDrainDefense") > 0 and GetObjectType(source) ~= Obj_AI_Turret then
-      amount = amount * 0.8
-    end
-
-    if GotBuff(target, "Meditate") > 0 then
-      amount = amount - amount * ({0.5, 0.55, 0.6, 0.65, 0.7})[GetCastLevel(target, _W)] / (GetObjectType(source) == Obj_AI_Turret and 2 or 1)
-    end
-
-    if GotBuff(target, "Shen Shadow Dash") > 0 and GotBuff(source, "Taunt") > 0 and DamageType == 1 then
-      amount = amount * 0.5
-    end
   end
   return amount
 end
