@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = 0.34
+DamageLibVersion = 0.35
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -128,7 +128,7 @@ function DamageReductionMod(source,target,amount,DamageType)
         end
 
         if GetObjectName(target) == "MasterYi" then
-          if GetBuffName(target, i) == "Meditate" > 0 then
+          if GetBuffName(target, i) == "Meditate" then
             amount = amount - amount * ({0.5, 0.55, 0.6, 0.65, 0.7})[GetCastLevel(target, _W)] / (GetObjectType(source) == Obj_AI_Turret and 2 or 1)
           end
         end
