@@ -1,15 +1,3 @@
-local ChallengerSmiteVersion = 0.01
-
-if GetUser() ~= "Deftsu" then 
-  GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerSmite.version", function(data)
-    if tonumber(data) > ChallengerSmiteVersion then
-      PrintChat("<b><font color='#EE2EC'>Challenger Smite - </font></b> New version found! " ..tonumber(data).." Downloading update, please wait...")
-      DownloadFileAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/ChallengerSmite.lua", SCRIPT_PATH .. "ChallengerSmite.lua", function() PrintChat("<b><font color='#EE2EC'>Challenger Smite - </font></b> Updated from v"..ChallengerSmiteVersion.." to v"..tonumber(data)..". Please press F6 twice to reload.") return end)
-      return
-    end
-  end)
-end
-
 local spellstr = {[0] = "Q", [1] = "W", [2] = "E", [3] = "R"}
 
 class "ChallengerSmite"
