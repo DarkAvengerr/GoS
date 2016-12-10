@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = 0.38
+DamageLibVersion = 0.39
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
