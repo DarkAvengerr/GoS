@@ -1,6 +1,6 @@
 if DamageLibVersion then return end
 
-DamageLibVersion = 0.46
+DamageLibVersion = 0.47
 
 if GetUser() ~= "Deftsu" then GetWebResultAsync("https://raw.githubusercontent.com/D3ftsu/GoS/master/Common/DamageLib.version", 
   function(data)
@@ -171,7 +171,7 @@ end
 local DamageLibTable = {
   ["Aatrox"] = {
     {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({10, 35, 60, 95, 120})[level] + 1.1 * source.totalDamage end},
-    {Slot = "W", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({30, 60, 90, 120, 150})[level] + 0.75 * GetBonusDmg(source) end},
+    {Slot = "W", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({45, 80, 115, 150, 185})[level] + 0.75 * GetBonusDmg(source) end},
     {Slot = "E", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({70, 110, 150, 190, 230})[level] + 0.7 * GetBonusDmg(source) end},
     {Slot = "R", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({200, 300, 400})[level] + GetBonusAP(source) end},
   },
@@ -611,7 +611,7 @@ local DamageLibTable = {
   },
 
   ["MissFortune"] = {
-    {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({20, 35, 50, 65, 80})[level] + 0.35 * GetBonusAP(source) + 0.85 * source.totalDamage end},
+    {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({20, 40, 60, 80, 100})[level] + 0.35 * GetBonusAP(source) + source.totalDamage end},
     {Slot = "W", Stage = 1, DamageType = 2, Damage = function(source, target, level) return 0.06 * source.totalDamage end},
     {Slot = "E", Stage = 1, DamageType = 2, Damage = function(source, target, level) return ({80, 115, 150, 185, 220})[level] + 0.8 * GetBonusAP(source) end},
     {Slot = "R", Stage = 1, DamageType = 1, Damage = function(source, target, level) return 0.75 * source.totalDamage + 0.2 * GetBonusAP(source) end},
@@ -711,7 +711,7 @@ local DamageLibTable = {
   ["Quinn"] = {
     {Slot = "Q", Stage = 1, DamageType = 1, Damage = function(source, target, level) local damage = (({20, 45, 70, 95, 120})[level] + ({0.8, 0.9, 1.0, 1.1, 1.2})[level] * source.totalDamage) + 0.35 * GetBonusAP(source) ; damage = damage + damage * ((100 - GetPercentHP(target)) / 100) ; return damage end},
     {Slot = "E", Stage = 1, DamageType = 1, Damage = function(source, target, level) return ({40, 70, 100, 130, 160})[level] + 0.2 * source.totalDamage end},
-    {Slot = "R", Stage = 1, DamageType = 1, Damage = function(source, target, level) return source.totalDamage end},
+    {Slot = "R", Stage = 1, DamageType = 1, Damage = function(source, target, level) return 0.4 * source.totalDamage end},
   },
 
   ["Rammus"] = {
